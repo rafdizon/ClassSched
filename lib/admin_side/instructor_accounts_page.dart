@@ -1,7 +1,7 @@
 import 'package:class_sched/admin_side/base_layout.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:class_sched/ui_elements/add_instructor_dialog.dart';
-//import 'package:class_sched/ui_elements/add_instructor_dialog.dart';
+import 'package:class_sched/ui_elements/edit_instructor_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
@@ -17,6 +17,30 @@ class InstructorAccountsPage extends StatefulWidget {
 class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
   final adminDBManager = AdminDBManager();
   final scrollController = ScrollController();
+  bool sort = false;
+  int sortIndex = 0;
+  Stream<List<Map<String, dynamic>>>? streamInstructors;
+  
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    streamInstructors = adminDBManager.database.from('instructor').stream(primaryKey: ['id']).map(((instructors) => instructors.map((instructor)
+        {
+          return {
+            'id' : instructor['id'],
+            'first_name' : instructor['first_name'],
+            'middle_name' : instructor['middle_name'],
+            'last_name' : instructor['last_name'],
+            'is_full_time' : instructor['is_full_time'],
+            'email' : instructor['email'],
+            'sex' : instructor['sex'],
+          };
+        }).toList()
+      )
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BaseLayout(
@@ -36,7 +60,7 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
                   width: 300,
                   height: 40,
                   child: TextField(
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    style: Theme.of(context).textTheme.bodySmall,
                     decoration: const InputDecoration(
                       suffixIcon: Icon(Icons.search),
                       hintText: 'Search',
@@ -87,55 +111,105 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
                   double screenHeight = constraints.maxHeight;
                   double screenWidth = constraints.maxWidth;
 
-                  return FutureBuilder<Object>(
-                    future: adminDBManager.getinstructors(),
+                  return StreamBuilder<Object>(
+                    stream: streamInstructors,
                     builder: (context, snapshot) {
-                      if(snapshot.connectionState == ConnectionState.waiting){
+                      if(snapshot.connectionState == ConnectionState.waiting || snapshot.data == null){
                         return const Center(child: CircularProgressIndicator(),);
                       }
                       else if(snapshot.hasError){
                         return Center(child: Text('Error: ${snapshot.error}'));
                       }
 
-                      final instructorData = (snapshot.data! as List<Map<String, dynamic>>).map<DataRow>((instructor){
+                      logger.d(snapshot.data);
+                      final instructorList = snapshot.data! as List<Map<String, dynamic>>;
+                      final instructorData = instructorList.map<DataRow>((instructor){
                         return DataRow(
                           cells: [
                             DataCell(
                               IconButton(
-                                onPressed: () {}, 
+                                onPressed: () {
+                                  showDialog(
+                                    context: context, 
+                                    barrierDismissible: false,
+                                    builder: (context) => EditInstructorDialog(instructor: instructor)
+                                  );
+                                }, 
                                 icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary,)
                               )
                             ),
                             DataCell(
                               IconButton(
-                                onPressed: () async {
-                                  final error = await adminDBManager.deleteUser(
-                                    id: instructor['id'],
-                                    email: instructor['email'].toString()
+                                onPressed: () {
+                                  showDialog(
+                                    context: context, 
+                                    builder: (context) {
+                                      return Dialog(
+                                        child: SizedBox(
+                                          height: 180,
+                                          width: 150,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(20),
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                Text('Are you sure to delete? This cannot be undone'),
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.of(context).pop();
+                                                      }, 
+                                                      child: Text(
+                                                        'Cancel',
+                                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black, fontWeight: FontWeight.bold)
+                                                      )
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () async {
+                                                        final error = await adminDBManager.deleteUser(
+                                                          id: instructor['id'],
+                                                          email: instructor['email'].toString(),
+                                                          isStudent: false
+                                                        );
+                                                        if(error != null && mounted){
+                                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error $error'), backgroundColor: Colors.red));
+                                                        }
+                                                        else {
+                                                          setState(() {
+                                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Successfully deleted student!'), backgroundColor: Theme.of(context).colorScheme.primary));
+                                                          });
+                                                        }
+                                                        Navigator.of(context).pop();
+                                                      }, 
+                                                      child: Text(
+                                                        'Delete',
+                                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red, fontWeight: FontWeight.bold)
+                                                      )
+                                                    ),
+                                                  ],
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
                                   );
-                                  if(error != null && mounted){
-                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error $error'), backgroundColor: Colors.red));
-                                  }
-                                  else {
-                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Successfully deleted instructor!'), backgroundColor: Theme.of(context).colorScheme.primary));
-                                  }
                                 }, 
                                 icon: const Icon(Icons.delete, color: Colors.red,)
                               )
                             ),
-                            DataCell(Text(instructor['instructor_no'] ?? '')),
                             DataCell(Text(instructor['first_name'] ?? '')),
                             DataCell(Text(instructor['middle_name'] ?? '')),
                             DataCell(Text(instructor['last_name'] ?? '')),
-                            DataCell(Text(instructor['section']['year_level'].toString())),
-                            DataCell(Text(instructor['section']['course']['name'] ?? '')),
-                            DataCell(Text(instructor['is_regular'] ? 'Regular' : 'Irregular')),
                             DataCell(Text(instructor['email'] ?? '')),
                             DataCell(Text(instructor['sex'] ?? '')),
+                            DataCell(Text(instructor['is_full_time'] ? 'Full Time' : 'Part Time')),
                           ]
                         );
                       }).toList();
-                      logger.d(instructorData);
                       return SizedBox(
                         height: screenHeight - 102,
                         width: screenWidth,
@@ -146,42 +220,48 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
                             child: SingleChildScrollView(
                               controller: scrollController,
                               scrollDirection: Axis.horizontal,
-                              child: DataTable(
-                                columnSpacing: 30,
-                                dataTextStyle: Theme.of(context).textTheme.bodySmall,
-                                border: const TableBorder(top: BorderSide()),
-                                columns: const [
-                                  DataColumn(label: Text('')),
-                                  DataColumn(label: Text('')),
-                                  DataColumn(
-                                    label: Text('instructor ID'),
+                              child: FittedBox(
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(minWidth: screenWidth),
+                                  child: DataTable(
+                                    sortAscending: sort,
+                                    sortColumnIndex: sortIndex,
+                                    columnSpacing: 30,
+                                    dataTextStyle: Theme.of(context).textTheme.bodySmall,
+                                    border: const TableBorder(top: BorderSide()),
+                                    columns: [
+                                      const DataColumn(label: Text('')),
+                                      const DataColumn(label: Text('')),
+                                      const DataColumn(
+                                        label: Text('First Name'),
+                                      ),
+                                      const DataColumn(
+                                        label: Text('Middle Name'),
+                                      ),
+                                      DataColumn(
+                                        label: const Text('Last Name'),
+                                        onSort: (columnIndex, ascending) {
+                                          setState(() {
+                                            sort = !sort;
+                                            sortIndex = columnIndex;
+                                  
+                                            instructorList.sort((a,b) => sort ? a['last_name'].compareTo(b['last_name']) : b['last_name'].compareTo(a['last_name']));
+                                          });
+                                        }
+                                      ),
+                                      const DataColumn(
+                                        label: Text('E-mail Address'),
+                                      ),
+                                      const DataColumn(
+                                        label: Text('Sex'),
+                                      ),
+                                      const DataColumn(
+                                        label: Text('Status'),
+                                      ),
+                                    ], 
+                                    rows: instructorData
                                   ),
-                                  DataColumn(
-                                    label: Text('First Name'),
-                                  ),
-                                  DataColumn(
-                                    label: Text('Middle Name'),
-                                  ),
-                                  DataColumn(
-                                    label: Text('Last Name'),
-                                  ),
-                                  DataColumn(
-                                    label: Text('Year'),
-                                  ),
-                                  DataColumn(
-                                    label: Text('Course'),
-                                  ),
-                                  DataColumn(
-                                    label: Text('Status'),
-                                  ),
-                                  DataColumn(
-                                    label: Text('E-mail Address'),
-                                  ),
-                                  DataColumn(
-                                    label: Text('Sex'),
-                                  ),
-                                ], 
-                                rows: instructorData
+                                ),
                               ),
                             ),
                           ),

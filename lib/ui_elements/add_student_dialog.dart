@@ -71,7 +71,7 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
                           child: TextField(
                             controller: _studentNoController,
                             decoration: const InputDecoration(
-                            contentPadding: EdgeInsets.fromLTRB(10, -15, 10, 0)
+                              contentPadding: EdgeInsets.fromLTRB(10, -15, 10, 0)
                             ),
                             style: Theme.of(context).textTheme.bodySmall,
                           )
@@ -241,7 +241,6 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
                             onChanged: (newValue) {
                               setState(() {
                                 _selectedYear = newValue;
-                                logger.d(_dropdownValue);
                               });
                             },
                             isExpanded: true,

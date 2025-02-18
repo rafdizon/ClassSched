@@ -1,5 +1,6 @@
 import 'package:class_sched/admin_side/base_layout.dart';
 import 'package:class_sched/admin_side/instructor_accounts_page.dart';
+import 'package:class_sched/admin_side/school_setup_page.dart';
 import 'package:class_sched/admin_side/student_accounts_page.dart';
 import 'package:class_sched/ui_elements/dashboard_menu_item.dart';
 import 'package:flutter/material.dart';
@@ -81,7 +82,12 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            
+                            Navigator.push(
+                              context, 
+                              MaterialPageRoute(
+                                builder: (context) => const SchoolSetupPage()
+                              )
+                            );
                           },
                           child: const DashboardMenuItem(
                             icon: Icons.school, 
