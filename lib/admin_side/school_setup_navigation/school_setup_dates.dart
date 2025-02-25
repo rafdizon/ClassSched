@@ -1,4 +1,4 @@
-import 'package:class_sched/ui_elements/current_dates_tab.dart';
+import 'package:class_sched/admin_side/school_setup_navigation/dates_tabs/current_dates_tab.dart';
 import 'package:flutter/material.dart';
 
 class SchoolSetupDates extends StatefulWidget {

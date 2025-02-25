@@ -76,6 +76,7 @@ class _LogInPageState extends State<LogInPage> {
                       decoration: const InputDecoration(
                         hintText: 'SPUSM E-mail',
                       ),
+                      style: Theme.of(context).textTheme.bodySmall,
                     ),
                     const SizedBox(height: 10),
                     TextField(
@@ -96,6 +97,7 @@ class _LogInPageState extends State<LogInPage> {
                           },
                         ),
                       ),
+                      style: Theme.of(context).textTheme.bodySmall,
                       obscureText: !isViewPasswordEnabled,
                     ),
                     const SizedBox(height: 10),

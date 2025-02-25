@@ -55,7 +55,8 @@ class MyApp extends StatelessWidget {
           hintStyle: TextStyle(
             color: Colors.black26,
             fontSize: 14
-          )
+          ),
+          
         ),
         useMaterial3: true,
       ),
