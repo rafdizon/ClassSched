@@ -65,12 +65,9 @@ class _SchoolSetupPageState extends State<SchoolSetupPage> {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                child: SizedBox(
-                  width: constraints.maxWidth - (constraints.maxWidth * 0.25),
-                  child: _navigationDestinations[_selectedNavigIndex]
-                ),
+              SizedBox(
+                width: constraints.maxWidth - (constraints.maxWidth * 0.1777),
+                child: _navigationDestinations[_selectedNavigIndex]
               )
             ],
           );

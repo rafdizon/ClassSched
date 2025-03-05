@@ -25,9 +25,10 @@ class AdminDBManager {
     }) async {
       try {
         await authService.signUpWithEmailAndPassword(email, pw);
-        
+        logger.d('Year and course_id: ${year} and ${courseID}'); 
         final sectionIDResp = await database.from('section').select('id').eq('year_level', year).eq('course_id', courseID).single();
         final sectionID = sectionIDResp['id'];
+        
         if(sectionID != null) {
           await database.from('student')
           .insert({
@@ -98,6 +99,25 @@ class AdminDBManager {
     }
   }
 
+  Future addCycle({
+    required semId, 
+    required cycleNo,
+    required startDate,
+    required endDate,
+    }) async {
+      try {
+        await database.from('cycle').insert({
+          'cycle_no' : cycleNo,
+          'start_date' : startDate,
+          'end_date' : endDate,
+          'semester_id' : semId,
+        });
+        return null;
+      } on Exception catch (e) {
+        return e.toString();
+      }
+  }
+
   // read
   
   Future<Map<int, dynamic>> fetchSectionData() async {
@@ -107,6 +127,17 @@ class AdminDBManager {
 
     return { for (var s in sectionData) s['id']: s };
   }
+
+  Future<Map<int, dynamic>> fetchAcadYearData({bool? isCurrent = false}) async {
+
+    final acadYearData = await Supabase.instance.client
+    .from('academic_year')
+    .select()
+    .eq('is_active', isCurrent! ? true : false);
+
+    return { for(var a in acadYearData) a['id'] : a };
+  }
+ 
 
   Future<List<dynamic>> getStudents() async {
     final students = await database
@@ -204,7 +235,7 @@ class AdminDBManager {
         final responseFromTable = await database.from('instructor').delete().eq('id', id);
       }
 
-      logger.d(responseFromFunc);
+      //logger.d(responseFromFunc);
       return null;
     } on Exception catch (e) {
       return e.toString();
@@ -214,6 +245,16 @@ class AdminDBManager {
   Future deleteCourse({required id}) async {
     try {
       await database.from('course').delete().inFilter('id', id);
+      return null;
+    }
+    on Exception catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future deleteCycle({required id}) async {
+    try {
+      await database.from('cycle').delete().eq('id', id);
       return null;
     }
     on Exception catch (e) {

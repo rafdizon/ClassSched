@@ -1,4 +1,5 @@
 import 'package:class_sched/admin_side/school_setup_navigation/dates_tabs/current_dates_tab.dart';
+import 'package:class_sched/admin_side/school_setup_navigation/dates_tabs/history_dates_tab.dart';
 import 'package:flutter/material.dart';
 
 class SchoolSetupDates extends StatefulWidget {
@@ -19,9 +20,7 @@ class _SchoolSetupDatesState extends State<SchoolSetupDates> with SingleTickerPr
 
     _mainTabController.addListener((){
       if (_mainTabController.indexIsChanging) {
-        setState(() {
-          
-        });
+        setState(() {});
       }
     });
   }
@@ -35,36 +34,41 @@ class _SchoolSetupDatesState extends State<SchoolSetupDates> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Dates', style: Theme.of(context).textTheme.displayMedium,),
-            SizedBox(
-              width: 200,
-              height: 50,
-              child: TabBar(
-                controller: _mainTabController,
-                tabs: const [
-                  Tab(text: "Ongoing",),
-                  Tab(text: "History",),
-                ]
-              ),
-            )
-          ],
-        ),
-        Expanded(
-          child: TabBarView(
-            controller: _mainTabController,
-            children: const [
-              CurrentDatesTab(),
-              Text("History"),
+    return Container(
+      constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height, minWidth: MediaQuery.of(context).size.width),
+      padding: EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Dates', style: Theme.of(context).textTheme.displayMedium,),
+              SizedBox(
+                width: 200,
+                height: 50,
+                child: TabBar(
+                  controller: _mainTabController,
+                  tabs: const [
+                    Tab(text: "Ongoing",),
+                    Tab(text: "History",),
+                  ]
+                ),
+              )
             ],
           ),
-        )
-      ]
+          SizedBox(
+            height: MediaQuery.of(context).size.height - 150, // Adjust as needed
+            child: TabBarView(
+              controller: _mainTabController,
+              children: const [
+                CurrentDatesTab(),
+                HistoryDatesTab(),
+              ],
+            ),
+          ),
+        ]
+      ),
     );
   }
 }

@@ -276,7 +276,6 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
                                 onChanged: (newValue) {
                                   setState(() {
                                     _dropdownValue = newValue;
-                                    logger.d(_dropdownValue);
                                   });
                                 },
                                 selectedItemBuilder: (context) {

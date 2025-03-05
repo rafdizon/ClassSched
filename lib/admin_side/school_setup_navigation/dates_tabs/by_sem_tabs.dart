@@ -1,6 +1,8 @@
+import 'package:class_sched/ui_elements/add_cycle_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:logger/logger.dart';
+import 'package:data_table_2/data_table_2.dart';
 
 var logger = Logger();
 class BySemTabs extends StatefulWidget {
@@ -16,14 +18,13 @@ class BySemTabs extends StatefulWidget {
 class _BySemTabsState extends State<BySemTabs> {
   final adminDBManager = AdminDBManager();
 
-  var _selectedRows = [];
-
   Stream<List<Map<String, dynamic>>>? streamCycles;
 
   @override
   void initState() {
     // TODO: implement initState
-    streamCycles = adminDBManager.database.from('cycle').stream(primaryKey: ['id']).eq('semester_id', widget.semId)
+    super.initState();
+    streamCycles = adminDBManager.database.from('cycle').stream(primaryKey: ['id']).eq('semester_id', widget.semId).order('cycle_no', ascending: true)
       .map((cycles) => cycles.map((cycle) {
         return {
           'id' : cycle['id'],
@@ -32,7 +33,7 @@ class _BySemTabsState extends State<BySemTabs> {
           'end_date' : cycle['end_date'],
         };
       }).toList()
-      );
+    );
   }
   @override
   Widget build(BuildContext context) {
@@ -48,41 +49,52 @@ class _BySemTabsState extends State<BySemTabs> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
           final cyclesList = snapshot.data as List<Map<String, dynamic>>;
-          //logger.d(cyclesList);
           final cyclesRows = cyclesList.map((cycles) {
             return DataRow(
               cells: [
                 DataCell(
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: 20),
-                    child: Checkbox(
-                      value: _selectedRows.contains(cycles['id']),
-                      onChanged: (value) {
-                        setState(() {
-                          if(value == true) {
-                            _selectedRows.add(cycles['id']);
-                          } else {
-                            _selectedRows.remove(cycles['id']);
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton(
+                        onPressed: () async {
+                          final error = await adminDBManager.deleteCycle(id: cycles['id']);
+
+                          if(error == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted Successfully!'), backgroundColor: Theme.of(context).colorScheme.primary,));
                           }
-                          //logger.d(_selectedRows);
-                        });
-                      },
-                    ),
-                  ),
-                ),
-                DataCell(
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: 20),
-                    child: IconButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context, 
-                          barrierDismissible: false,
-                          builder: (context) => const Placeholder()
-                        );
-                      }, 
-                      icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary,)
-                    ),
+                          else {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error $error'), backgroundColor: Colors.red));
+                          }
+                          setState(() {
+                            streamCycles = adminDBManager.database
+                              .from('cycle')
+                              .stream(primaryKey: ['id'])
+                              .eq('semester_id', widget.semId)
+                              .order('cycle_no', ascending: true)
+                              .map((cycles) => cycles
+                                  .map((cycle) => {
+                                        'id': cycle['id'],
+                                        'cycle_no': cycle['cycle_no'],
+                                        'start_date': cycle['start_date'],
+                                        'end_date': cycle['end_date'],
+                                      })
+                                  .toList());
+                          });
+                        }, 
+                        icon: const Icon(Icons.delete, color: Colors.red,)
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context, 
+                            barrierDismissible: false,
+                            builder: (context) => const Placeholder()
+                          );
+                        }, 
+                        icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary,)
+                      ),
+                    ],
                   ),
                 ),
                 DataCell(Text(cycles['cycle_no'], style: Theme.of(context).textTheme.bodySmall,)),
@@ -91,16 +103,54 @@ class _BySemTabsState extends State<BySemTabs> {
               ]
             );
           }).toList();
-          return DataTable(
-            headingRowColor: WidgetStatePropertyAll(Theme.of(context).colorScheme.secondary),
-            columns: const [
-              DataColumn(label: Text('')),
-              DataColumn(label: Text('')),
-              DataColumn(label: Text('Cycle')),
-              DataColumn(label: Text('Start Date')),
-              DataColumn(label: Text('End Date')),
-            ], 
-            rows: cyclesRows
+          return ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 400),
+            child: DataTable2(
+              headingRowColor: WidgetStatePropertyAll(Theme.of(context).colorScheme.secondary),
+              columns: const [
+                DataColumn2(label: Text(''), fixedWidth: 200),
+                DataColumn2(label: Text('Cycle')),
+                DataColumn2(label: Text('Start Date')),
+                DataColumn2(label: Text('End Date')),
+              ], 
+              rows: [
+                ...cyclesRows,
+                DataRow(
+                  cells: [
+                    DataCell(
+                      Center(
+                        child: IconButton(
+                          onPressed: () async {
+                            final result = await showDialog(
+                              context: context, 
+                              builder: (context) => AddCycleDialog(cycleNo: cyclesList.isNotEmpty ? int.tryParse(cyclesList.last['cycle_no']) ?? 0 : 0, semId: widget.semId)
+                            );
+                            if (result == true) {
+                              setState(() {
+                                streamCycles = adminDBManager.database.from('cycle').stream(primaryKey: ['id']).eq('semester_id', widget.semId).order('cycle_no', ascending: true)
+                                  .map((cycles) => cycles.map((cycle) {
+                                    return {
+                                      'id' : cycle['id'],
+                                      'cycle_no' : cycle['cycle_no'],
+                                      'start_date' : cycle['start_date'],
+                                      'end_date' : cycle['end_date'],
+                                    };
+                                  }).toList()
+                                );
+                              });
+                            }
+                          }, 
+                          icon: const Icon(Icons.add), 
+                        ),
+                      ),
+                    ),
+                    DataCell(Text('Press + to add a cycle', style: Theme.of(context).textTheme.bodySmall,)),
+                    const DataCell(SizedBox()),
+                    const DataCell(SizedBox()),
+                  ]
+                )
+              ]
+            ),
           );
         }
       ),

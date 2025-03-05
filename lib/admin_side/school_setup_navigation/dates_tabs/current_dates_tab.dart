@@ -23,24 +23,31 @@ class _CurrentDatesTabState extends State<CurrentDatesTab> with SingleTickerProv
   Stream<List<Map<String, dynamic>>>? streamSem;
   bool _isEditing = false;
 
+  void initStreamSem() async {
+    final acadYearMap = await adminDBManager.fetchAcadYearData(isCurrent: true);
+
+    setState(() {
+      streamSem = adminDBManager.database.from('semester').stream(primaryKey: ['id']).order('start_date').limit(3)
+        .map((sems) => sems.map((sem) {
+          final acadYear = acadYearMap[sem['academic_year_id']];
+          return {
+            'id' : sem['id'],
+            'number' : sem['number'],
+            'academic_year' : acadYear['academic_year'],
+            'start_date' : sem['start_date'],
+            'end_date' : sem['end_date'],
+            'is_active' : acadYear['is_active']
+          };
+        }).toList()
+      );
+    });
+  }
   @override
   void initState() {
     // TODO: implement initState
     _semTabController = TabController(length: 3, vsync: this);
-    
     _semIdSelected = 0;
-    streamSem = adminDBManager.database.from('semester').stream(primaryKey: ['id']).order('start_date').limit(3)
-      .map((sems) => sems.map((sem) {
-        return {
-          'id' : sem['id'],
-          'number' : sem['number'],
-          'academic_year' : sem['academic_year'],
-          'start_date' : sem['start_date'],
-          'end_date' : sem['end_date'],
-        };
-      }).toList()
-    );
-    
+    initStreamSem();
     super.initState();
   }
 
@@ -68,122 +75,121 @@ class _CurrentDatesTabState extends State<CurrentDatesTab> with SingleTickerProv
 
         if (_semIdSelected == 0 && semList.isNotEmpty) {
           _semIdSelected = semList[2]['id'];
+          _startDateController.text = semList[2]['start_date'];
+          _endDateController.text = semList[2]['end_date'];
         }
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [ 
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Academic Year'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(semList[2]['academic_year'], style: Theme.of(context).textTheme.bodyLarge,),
-                      TextButton(
-                        onPressed: (){}, 
-                        child: const Text('Move to History', style: TextStyle(color: Colors.red,))
-                      )
-                    ],
-                  ),
-                  TabBar(
-                    controller: _semTabController,
-                    tabs: const [
-                      Text('1st Semester'),
-                      Text('2nd Semester'),
-                      Text('Summer'),
-                    ],
-                    onTap: (value) {
-                      if(value == 0) {
-                        setState(() {
-                          _semIdSelected = semList[2]['id'];
-                          _startDateController.text =  semList[2]['start_date'];
-                          _endDateController.text =  semList[2]['end_date'];
-                        });
-                      } else if(value == 1) {
-                        setState(() {
-                          _semIdSelected = semList[1]['id'];
-                          _startDateController.text =  semList[1]['start_date'];
-                          _endDateController.text =  semList[1]['end_date'];
-                        });
-                      } else if(value == 2) {
-                        setState(() {
-                          _semIdSelected = semList[0]['id'];
-                          _startDateController.text =  semList[0]['start_date'];
-                          _endDateController.text =  semList[0]['end_date'];
-                        });
-                      }
-                    },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 20),
-                    child: Row(
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [ 
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Academic Year'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        SizedBox(
-                          width: 200,
-                          height: 50,
-                          child: TextField(
-                            controller: _startDateController,
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: 'Start Date',
-                              labelStyle: Theme.of(context).textTheme.bodySmall,
-                              prefixIcon: const Icon(Icons.calendar_month)
-                            ),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                            onTap: () async {
-                              _selectStartDate();
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 20),
-                        SizedBox(
-                          width: 200,
-                          height: 50,
-                          child: TextField(
-                            controller: _endDateController,
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: 'End Date',
-                              labelStyle: Theme.of(context).textTheme.bodySmall,
-                              prefixIcon: const Icon(Icons.calendar_month)
-                            ),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                            onTap: () async {
-                             _selectEndDate();
-                            },
-                          ),
-                        ),
+                        Text(semList[2]['academic_year'], style: Theme.of(context).textTheme.bodyLarge,),
+                        TextButton(
+                          onPressed: (){}, 
+                          child: const Text('Move to History', style: TextStyle(color: Colors.red,))
+                        )
                       ],
                     ),
-                  ),
-                  SizedBox(
-                    height: 240,
-                    child: Builder(
-                      builder: (context) {
-                        return TabBarView(
-                          controller: _semTabController,
-                          // children: [
-                          //   BySemTabs(semId: _semIdSelected, semNo: 1,),
-                          //   BySemTabs(semId: _semIdSelected, semNo: 2,),
-                          //   BySemTabs(semId: _semIdSelected, semNo: 3,),
-                          // ]
-                          children: List.generate(3, (index) {
-                            return BySemTabs(
-                              semId: semList[2 - index]['id'], 
-                              semNo: index + 1,
-                            );
-                          }),
-                        );
-                      }
+                    TabBar(
+                      controller: _semTabController,
+                      tabs: const [
+                        Text('1st Semester'),
+                        Text('2nd Semester'),
+                        Text('Summer'),
+                      ],
+                      onTap: (value) {
+                        if(value == 0) {
+                          setState(() {
+                            _semIdSelected = semList[2]['id'];
+                            _startDateController.text =  semList[2]['start_date'];
+                            _endDateController.text =  semList[2]['end_date'];
+                          });
+                        } else if(value == 1) {
+                          setState(() {
+                            _semIdSelected = semList[1]['id'];
+                            _startDateController.text =  semList[1]['start_date'];
+                            _endDateController.text =  semList[1]['end_date'];
+                          });
+                        } else if(value == 2) {
+                          setState(() {
+                            _semIdSelected = semList[0]['id'];
+                            _startDateController.text =  semList[0]['start_date'];
+                            _endDateController.text =  semList[0]['end_date'];
+                          });
+                        }
+                      },
                     ),
-                  ),
-                ],
-              ), 
-            ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 200,
+                            height: 50,
+                            child: TextField(
+                              controller: _startDateController,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                labelText: 'Start Date',
+                                labelStyle: Theme.of(context).textTheme.bodySmall,
+                                prefixIcon: const Icon(Icons.calendar_month)
+                              ),
+                              style: Theme.of(context).textTheme.bodyMedium,
+                              onTap: () async {
+                                _selectStartDate();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 20),
+                          SizedBox(
+                            width: 200,
+                            height: 50,
+                            child: TextField(
+                              controller: _endDateController,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                labelText: 'End Date',
+                                labelStyle: Theme.of(context).textTheme.bodySmall,
+                                prefixIcon: const Icon(Icons.calendar_month)
+                              ),
+                              style: Theme.of(context).textTheme.bodyMedium,
+                              onTap: () async {
+                               _selectEndDate();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(
+                      height: 300,
+                      child: Builder(
+                        builder: (context) {
+                          return TabBarView(
+                            controller: _semTabController,
+                            children: List.generate(3, (index) {
+                              return BySemTabs(
+                                semId: semList[2 - index]['id'], 
+                                semNo: index + 1,
+                              );
+                            }),
+                          );
+                        }
+                      ),
+                    ),
+                  ],
+                ), 
+              ],
+            ),
           ),
         );
       }
@@ -208,9 +214,15 @@ class _CurrentDatesTabState extends State<CurrentDatesTab> with SingleTickerProv
       }
     );
     if(_picked != null) {
+      String newDate = _picked.toString().split(" ")[0];
       setState(() {
-        _startDateController.text = _picked.toString().split(" ")[0];
+        _startDateController.text = newDate;
       });
+
+      await adminDBManager.database
+        .from('semester')
+        .update({'start_date': newDate})
+        .eq('id', _semIdSelected);
     }
   }
   Future<void> _selectEndDate() async {
@@ -232,9 +244,15 @@ class _CurrentDatesTabState extends State<CurrentDatesTab> with SingleTickerProv
       }
     );
     if(_picked != null) {
+      String newDate = _picked.toString().split(" ")[0];
       setState(() {
-        _endDateController.text = _picked.toString().split(" ")[0];
+        _endDateController.text = newDate;
       });
+
+      await adminDBManager.database
+        .from('semester')
+        .update({'end_date': newDate})
+        .eq('id', _semIdSelected);
     }
   }
 }
