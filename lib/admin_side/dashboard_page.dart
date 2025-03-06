@@ -2,6 +2,7 @@ import 'package:class_sched/admin_side/base_layout.dart';
 import 'package:class_sched/admin_side/instructor_accounts_page.dart';
 import 'package:class_sched/admin_side/school_setup_page.dart';
 import 'package:class_sched/admin_side/student_accounts_page.dart';
+import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:class_sched/ui_elements/dashboard_menu_item.dart';
 import 'package:flutter/material.dart';
 
@@ -13,6 +14,7 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  final adminDBManager = AdminDBManager();
   @override
   Widget build(BuildContext context) {
     return BaseLayout(
@@ -25,6 +27,31 @@ class _DashboardPageState extends State<DashboardPage> {
             Text(
               'Dashboard',
               style: Theme.of(context).textTheme.displayMedium,
+            ),
+            Row(
+              children: [
+                Card(
+                  child: FutureBuilder(
+                    future: adminDBManager.database.from('student').count(), 
+                    builder: (context, snapshot) {
+                      if(snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator(),);
+                      } else if(snapshot.hasError) {
+                        return Text(snapshot.error.toString());
+                      }
+
+                      final studentCount = snapshot.data as int;
+
+                      return ListTile(
+                        leading: Icon(Icons.groups_sharp),
+                        title: Text(studentCount.toString()),
+                        subtitle: Text('Students Enrolled'),
+                      );
+
+                    }
+                  )
+                ),
+              ],
             ),
             Expanded(
               child: LayoutBuilder(

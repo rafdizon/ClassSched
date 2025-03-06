@@ -1,6 +1,8 @@
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 
+final logger = Logger();
 class HistoryDatesTab extends StatefulWidget {
   const HistoryDatesTab({super.key});
 
@@ -10,28 +12,6 @@ class HistoryDatesTab extends StatefulWidget {
 
 class _HistoryDatesTabState extends State<HistoryDatesTab> {
   final adminDBManager = AdminDBManager();
-  
-  Stream<List<Map<String, dynamic>>>? streamSem;
-
-  void initStreamSem() async {
-    final acadYearMap = await adminDBManager.fetchAcadYearData();
-
-    setState(() {
-      streamSem = adminDBManager.database.from('semester').stream(primaryKey: ['id']).order('start_date').limit(3)
-        .map((sems) => sems.map((sem) {
-          final acadYear = acadYearMap[sem['academic_year_id']];
-          return {
-            'id' : sem['id'],
-            'number' : sem['number'],
-            'academic_year' : acadYear['academic_year'],
-            'start_date' : sem['start_date'],
-            'end_date' : sem['end_date'],
-            'is_active' : acadYear['is_active']
-          };
-        }).toList()
-      );
-    });
-  }
 
   @override
   void initState() {
@@ -41,6 +21,41 @@ class _HistoryDatesTabState extends State<HistoryDatesTab> {
   }
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return FutureBuilder(
+      future: adminDBManager.fetchAcadYearData(), 
+      builder: (context, snapshot) {
+        if(snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(),);
+        }
+        else if (snapshot.hasError) {
+          return Center(child: Text(snapshot.error.toString()),);
+        }
+
+        final acadYearMap = snapshot.data as Map<int, dynamic>;
+        final acadYearList = acadYearMap.values.toList();
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisExtent: 80),
+            itemCount: acadYearList.length,
+            itemBuilder: (context, index) {
+              return Card(
+                child: ListTile(
+                  title: Text(acadYearList[index]['academic_year'], style: Theme.of(context).textTheme.bodyMedium,),
+                  subtitle: Text('Academic Year', style: Theme.of(context).textTheme.bodySmall,),
+                  leading: const Icon(Icons.calendar_today_rounded),
+                  trailing: IconButton(
+                    onPressed: (){}, 
+                    icon: const Icon(Icons.arrow_forward_ios_rounded)
+                  ),
+                  iconColor: Theme.of(context).colorScheme.primary,
+                ),
+              );
+            }
+          ),
+        );
+      } 
+    );
   }
 }

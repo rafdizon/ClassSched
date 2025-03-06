@@ -148,7 +148,7 @@ class AdminDBManager {
   }
 
   Future<List<dynamic>> getCourses() async {
-    final courses = await database.from('course').select();
+    final courses = await database.from('course').select().neq('id', 0);
     return courses;
   }
 

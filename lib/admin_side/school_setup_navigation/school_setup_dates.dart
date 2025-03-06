@@ -58,7 +58,7 @@ class _SchoolSetupDatesState extends State<SchoolSetupDates> with SingleTickerPr
             ],
           ),
           SizedBox(
-            height: MediaQuery.of(context).size.height - 150, // Adjust as needed
+            height: MediaQuery.of(context).size.height - 150,
             child: TabBarView(
               controller: _mainTabController,
               children: const [
