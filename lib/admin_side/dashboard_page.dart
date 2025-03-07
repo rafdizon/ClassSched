@@ -5,6 +5,7 @@ import 'package:class_sched/admin_side/student_accounts_page.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:class_sched/ui_elements/dashboard_menu_item.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -28,30 +29,128 @@ class _DashboardPageState extends State<DashboardPage> {
               'Dashboard',
               style: Theme.of(context).textTheme.displayMedium,
             ),
-            Row(
-              children: [
-                Card(
-                  child: FutureBuilder(
-                    future: adminDBManager.database.from('student').count(), 
-                    builder: (context, snapshot) {
-                      if(snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator(),);
-                      } else if(snapshot.hasError) {
-                        return Text(snapshot.error.toString());
-                      }
-
-                      final studentCount = snapshot.data as int;
-
-                      return ListTile(
-                        leading: Icon(Icons.groups_sharp),
-                        title: Text(studentCount.toString()),
-                        subtitle: Text('Students Enrolled'),
-                      );
-
-                    }
-                  )
-                ),
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  SizedBox( 
+                    width: 300,
+                    height: 50,
+                    child: Card(
+                      elevation: 5,
+                      child: FutureBuilder(
+                        future: adminDBManager.database.from('academic_year').select().eq('is_active', true), 
+                        builder: (context, snapshot) {
+                          if(snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator(),);
+                          } else if(snapshot.hasError) {
+                            return Text(snapshot.error.toString());
+                          }
+                    
+                          final acadYearList = snapshot.data;
+                          final acadYear = acadYearList?.firstOrNull?['academic_year'];
+              
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            spacing: 20,
+                            children: [
+                              Icon(Icons.calendar_month),
+                              Text(acadYear, style: Theme.of(context).textTheme.bodyMedium,),
+                            ],
+                          );
+                        }
+                      )
+                    ),
+                  ),
+                  SizedBox( 
+                    width: 300,
+                    height: 50,
+                    child: Card(
+                      elevation: 5,
+                      child: FutureBuilder(
+                        future: adminDBManager.database.from('student').count(), 
+                        builder: (context, snapshot) {
+                          if(snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator(),);
+                          } else if(snapshot.hasError) {
+                            return Text(snapshot.error.toString());
+                          }
+                    
+                          final studentCount = snapshot.data as int;
+              
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            spacing: 20,
+                            children: [
+                              Icon(Icons.groups_sharp),
+                              Text(studentCount.toString(), style: Theme.of(context).textTheme.bodyMedium,),
+                              Text('Students Enrolled', style: Theme.of(context).textTheme.bodySmall,),
+                            ],
+                          );
+                        }
+                      )
+                    ),
+                  ),
+                  SizedBox( 
+                    width: 300,
+                    height: 50,
+                    child: Card(
+                      elevation: 5,
+                      child: FutureBuilder(
+                        future: adminDBManager.database.from('course').count(), 
+                        builder: (context, snapshot) {
+                          if(snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator(),);
+                          } else if(snapshot.hasError) {
+                            return Text(snapshot.error.toString());
+                          }
+                    
+                          final courseCount = snapshot.data as int;
+              
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            spacing: 20,
+                            children: [
+                              Icon(Icons.star),
+                              Text((courseCount - 1).toString(), style: Theme.of(context).textTheme.bodyMedium,),
+                              Text('Courses Offered', style: Theme.of(context).textTheme.bodySmall,),
+                            ],
+                          );
+                        }
+                      )
+                    ),
+                  ),
+                  SizedBox( 
+                    width: 300,
+                    height: 50,
+                    child: Card(
+                      elevation: 5,
+                      child: FutureBuilder(
+                        future: adminDBManager.database.from('instructor').count(), 
+                        builder: (context, snapshot) {
+                          if(snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator(),);
+                          } else if(snapshot.hasError) {
+                            return Text(snapshot.error.toString());
+                          }
+                    
+                          final instructorCount = snapshot.data as int;
+              
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            spacing: 20,
+                            children: [
+                              Icon(Icons.group),
+                              Text(instructorCount.toString(), style: Theme.of(context).textTheme.bodyMedium,),
+                              Text('Instructors', style: Theme.of(context).textTheme.bodySmall,),
+                            ],
+                          );
+                        }
+                      )
+                    ),
+                  ),
+                ],
+              ),
             ),
             Expanded(
               child: LayoutBuilder(

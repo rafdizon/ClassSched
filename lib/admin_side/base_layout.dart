@@ -37,7 +37,7 @@ class _BaseLayoutState extends State<BaseLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        bottom: PreferredSize(preferredSize: Size.fromHeight(1), child: Container(color: Colors.black, height: 0.25,)),
+        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: Theme.of(context).colorScheme.primary, height: 0.5,)),
         foregroundColor: Theme.of(context).colorScheme.primary,
         automaticallyImplyLeading: false,
         leading: Builder(

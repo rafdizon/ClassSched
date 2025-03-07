@@ -40,7 +40,7 @@ class _SchoolSetupSubjectsState extends State<SchoolSetupSubjects> with SingleTi
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Subjects', style: Theme.of(context).textTheme.displayMedium,),
+              Text('Curriculum', style: Theme.of(context).textTheme.displayMedium,),
               SizedBox(
                 width: 300,
                 height: 50,
@@ -54,8 +54,8 @@ class _SchoolSetupSubjectsState extends State<SchoolSetupSubjects> with SingleTi
               )
             ],
           ),
-          SizedBox(
-            height: MediaQuery.of(context).size.height - 200,
+          const SizedBox(height: 10,),
+          Expanded(
             child: TabBarView(
               controller: _mainTabController,
               children: const [

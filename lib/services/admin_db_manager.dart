@@ -261,4 +261,14 @@ class AdminDBManager {
       return e.toString();
     }
   }
+
+    Future deleteSubject({required id}) async {
+    try {
+      await database.from('subject').delete().inFilter('id', id);
+      return null;
+    }
+    on Exception catch (e) {
+      return e.toString();
+    }
+  }
 }

@@ -51,7 +51,7 @@ class _SchoolSetupPageState extends State<SchoolSetupPage> {
                           NavigationRailDestination(
                             icon: Icon(Icons.book, color: Colors.grey[800],), 
                             selectedIcon: const Icon(Icons.book),
-                            label: Text('Subjects Offered', style: TextStyle(color: Colors.grey[800]),)
+                            label: Text('Curricula', style: TextStyle(color: Colors.grey[800]),)
                           ),
                         ], 
                         selectedIndex: _selectedNavigIndex,
