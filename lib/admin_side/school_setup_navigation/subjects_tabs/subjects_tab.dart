@@ -16,7 +16,7 @@ class _SubjectsTabState extends State<SubjectsTab> {
 
   void initStreamSubjects() async {
     _streamSubjects = adminDBManager.database.from('subject')
-    .stream(primaryKey: ['id']).eq('course_id', 0)
+    .stream(primaryKey: ['id']).eq('is_general_subject', true)
     .map((subjects) => subjects.map((subject) {
       return {
         'id' : subject['id'],

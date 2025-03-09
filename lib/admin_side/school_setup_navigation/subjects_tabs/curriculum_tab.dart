@@ -1,3 +1,4 @@
+import 'package:class_sched/admin_side/school_setup_navigation/subjects_tabs/curriculum_dialog.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -27,6 +28,7 @@ class _CurriculumTabState extends State<CurriculumTab> {
         final courseItems = courseList.map((courseItem) {
           return Card(
             child: ListTile(
+              onTap: () => showDialog(context: context, builder: (context) => CurriculumDialog(courseId: courseItem['id'],)),
               mouseCursor: SystemMouseCursors.click,
               minVerticalPadding: 0,
               title: Column(

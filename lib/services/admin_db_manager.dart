@@ -159,7 +159,13 @@ class AdminDBManager {
 
     return instructors;
   }
+  Future getCurriculum({required int courseId}) async {
+    final curriculum = await database.from('curriculum')
+    .select('id, subject(id, name, code, units, is_general_subject), year_level, semester_no')
+    .eq('course_id', courseId);
 
+    return curriculum;
+  }
   // update
   Future editStudent({
     required int id, 

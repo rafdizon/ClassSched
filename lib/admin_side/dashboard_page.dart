@@ -1,5 +1,7 @@
 import 'package:class_sched/admin_side/base_layout.dart';
 import 'package:class_sched/admin_side/instructor_accounts_page.dart';
+import 'package:class_sched/admin_side/schedules_page.dart';
+import 'package:class_sched/admin_side/school_setup_navigation/school_setup_schedules.dart';
 import 'package:class_sched/admin_side/school_setup_page.dart';
 import 'package:class_sched/admin_side/student_accounts_page.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
@@ -198,7 +200,12 @@ class _DashboardPageState extends State<DashboardPage> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            
+                            Navigator.push(
+                              context, 
+                              MaterialPageRoute(
+                                builder: (context) => const SchedulesPage()
+                              )
+                            );
                           },
                           child: const DashboardMenuItem(
                             icon: Icons.calendar_month, 
