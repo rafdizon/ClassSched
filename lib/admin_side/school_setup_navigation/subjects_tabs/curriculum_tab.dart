@@ -18,7 +18,7 @@ class _CurriculumTabState extends State<CurriculumTab> {
       future: adminDBManager.getCourses(), 
       builder: (context, snapshot) {
         if(snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator(),);
+          return const Center(child: CircularProgressIndicator(),);
         }
         else if(snapshot.hasError) {
           return Text(snapshot.error.toString());

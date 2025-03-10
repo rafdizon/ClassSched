@@ -60,7 +60,7 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: AuthGate()
+      home: const AuthGate()
     );
   }
 }

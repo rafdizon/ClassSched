@@ -146,6 +146,14 @@ class AdminDBManager {
     
     return students;
   }
+  Future getSections({required int courseId}) async {
+    final sections = await database
+    .from('section')
+    .select()
+    .eq('course_id', courseId);
+
+    return sections;
+  }
 
   Future<List<dynamic>> getCourses() async {
     final courses = await database.from('course').select().neq('id', 0);
@@ -159,12 +167,29 @@ class AdminDBManager {
 
     return instructors;
   }
-  Future getCurriculum({required int courseId}) async {
-    final curriculum = await database.from('curriculum')
-    .select('id, subject(id, name, code, units, is_general_subject), year_level, semester_no')
-    .eq('course_id', courseId);
-
+  Future getCurriculum({required int courseId, int yearLevel = 0}) async {
+    PostgrestList curriculum;
+    if(yearLevel == 0) {
+      curriculum = await database.from('curriculum')
+      .select('id, subject(id, name, code, units, is_general_subject), year_level, semester_no')
+      .eq('course_id', courseId).order('semester_no', ascending: true);
+    }
+    else {
+      curriculum = await database.from('curriculum')
+      .select('id, subject(id, name, code, units, is_general_subject), year_level, semester_no')
+      .eq('course_id', courseId)
+      .eq('year_level', yearLevel).order('semester_no', ascending: true);
+    }
     return curriculum;
+  }
+
+  Future<List<Map<String, dynamic>>> getCycles() async {
+    final cycles = await database.from('cycle')
+    .select('id, cycle_no, start_date, end_date, semester(id, number, academic_year(academic_year, is_active))')
+    .eq('semester.academic_year.is_active', true)
+    .order('cycle_no', ascending: true);
+
+    return cycles;
   }
   // update
   Future editStudent({
