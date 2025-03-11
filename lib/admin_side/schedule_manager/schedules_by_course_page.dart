@@ -1,5 +1,6 @@
 import 'package:class_sched/admin_side/base_layout.dart';
-import 'package:class_sched/admin_side/schedule_manager/schedules_by_section.dart';
+import 'package:class_sched/admin_side/schedule_manager/schedule_manager_gate.dart';
+import 'package:class_sched/admin_side/schedule_manager/add_schedule_to_section_page.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:flutter/material.dart';
 
@@ -54,7 +55,7 @@ class _SchedulesByCoursePageState extends State<SchedulesByCoursePage> {
                       onTap: () {
                         Navigator.push(
                           context, 
-                          MaterialPageRoute(builder: (context) => BaseLayout(body: SchedulesBySection(section: section)))
+                          MaterialPageRoute(builder: (context) => BaseLayout(body: ScheduleManagerGate(section: section)))
                         );
                       },
                     ),

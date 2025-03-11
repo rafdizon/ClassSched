@@ -118,6 +118,32 @@ class AdminDBManager {
       }
   }
 
+  Future addScheduleSection({
+    required String startTime,
+    required String endTime,
+    required int cycleId,
+    required int curriculumId, 
+    required int sectionId,
+    required int instructorId,
+    required List<String> days
+  }) async {
+    try {
+      await database.from('schedule_time')
+      .insert({
+        'start_time' : startTime,
+        'end_time' : endTime,
+        'cycle_id' : cycleId,
+        'curriculum_id' : curriculumId,
+        'section_id' : sectionId,
+        'instructor_id' : instructorId,
+        'days' : days
+      });
+      return null;
+    } on Exception catch(e) {
+      return e.toString();
+    }
+    
+  }
   // read
   
   Future<Map<int, dynamic>> fetchSectionData() async {
@@ -149,7 +175,7 @@ class AdminDBManager {
   Future getSections({required int courseId}) async {
     final sections = await database
     .from('section')
-    .select()
+    .select('id, course(id, name, major, short_form), year_level')
     .eq('course_id', courseId);
 
     return sections;
@@ -172,7 +198,7 @@ class AdminDBManager {
     if(yearLevel == 0) {
       curriculum = await database.from('curriculum')
       .select('id, subject(id, name, code, units, is_general_subject), year_level, semester_no')
-      .eq('course_id', courseId).order('semester_no', ascending: true);
+      .eq('course_id', courseId).order('year_level', ascending: true);
     }
     else {
       curriculum = await database.from('curriculum')
@@ -190,6 +216,14 @@ class AdminDBManager {
     .order('cycle_no', ascending: true);
 
     return cycles;
+  }
+
+  Future getSchedulesForSection({required int sectionId}) async {
+    final sched = await database.from('schedule_time')
+    .select('id, start_time, end_time, curriculum(id, year_level, semester_no, subject(id, name, code, units, is_general_subject), course(id, name, major, short_form)), cycle(id, cycle_no, start_date, end_date, semester(id, number, start_date, end_date, academic_year)), instructor(id, first_name, middle_name, last_name, is_full_time, sex, email), section_id')
+    .eq('section_id', sectionId);
+
+    return sched;
   }
   // update
   Future editStudent({
