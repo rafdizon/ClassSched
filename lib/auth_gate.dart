@@ -1,3 +1,4 @@
+import 'package:class_sched/admin_side/base_layout.dart';
 import 'package:class_sched/admin_side/dashboard_page.dart';
 import 'package:class_sched/log_in_page.dart';
 import 'package:flutter/material.dart';
@@ -21,10 +22,10 @@ class AuthGate extends StatelessWidget {
         final session = Supabase.instance.client.auth.currentSession;
 
         if(session != null) {
-          return DashboardPage();
+          return const BaseLayout(body: DashboardPage(),);
         }
         else {
-          return LogInPage();
+          return const LogInPage();
         }
       }
     );

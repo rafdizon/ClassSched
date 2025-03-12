@@ -220,7 +220,7 @@ class AdminDBManager {
 
   Future getSchedulesForSection({required int sectionId}) async {
     final sched = await database.from('schedule_time')
-    .select('id, start_time, end_time, curriculum(id, year_level, semester_no, subject(id, name, code, units, is_general_subject), course(id, name, major, short_form)), cycle(id, cycle_no, start_date, end_date, semester(id, number, start_date, end_date, academic_year)), instructor(id, first_name, middle_name, last_name, is_full_time, sex, email), section_id')
+    .select('id, start_time, end_time, curriculum(id, year_level, semester_no, subject(id, name, code, units, is_general_subject), course(id, name, major, short_form)), cycle(id, cycle_no, start_date, end_date, semester(id, number, start_date, end_date, academic_year)), instructor(id, first_name, middle_name, last_name, is_full_time, sex, email), section(id, year_level)')
     .eq('section_id', sectionId);
 
     return sched;

@@ -1,4 +1,6 @@
 import 'package:class_sched/admin_side/base_layout.dart';
+import 'package:class_sched/admin_side/dashboard_page.dart';
+import 'package:class_sched/admin_side/notification_page.dart';
 import 'package:class_sched/admin_side/school_setup_navigation/school_setup_courses.dart';
 import 'package:class_sched/admin_side/school_setup_navigation/school_setup_dates.dart';
 import 'package:class_sched/admin_side/school_setup_navigation/school_setup_subjects.dart';

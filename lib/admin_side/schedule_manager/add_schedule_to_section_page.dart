@@ -1,5 +1,6 @@
 import 'package:class_sched/admin_side/schedule_manager/schedules_by_course_page.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
+import 'package:class_sched/ui_elements/add_subject_to_sched_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
 
@@ -32,6 +33,7 @@ class AddScheduleToSection extends StatefulWidget {
 class _AddScheduleToSectionState extends State<AddScheduleToSection> {
   final adminDBManager = AdminDBManager();
   Map<int, ScheduleEntry>  _scheduleEntries = {};
+  List<int> _removedSubjectIds = [];
 
   final _daysList = [Text("M"), Text("T"), Text("W"), Text("Th"), Text("F"), Text("Sa")];
   
@@ -39,14 +41,22 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
   late Future<dynamic> _cyclesFuture;
   late Future<dynamic> _instructorsFuture;
 
+  List<Map<String, dynamic>> _curriculumList = [];
+  bool _isLoading = true;
+
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    _curriculumFuture = adminDBManager.getCurriculum(
+    adminDBManager.getCurriculum(
       courseId: widget.section['course']['id'] as int, 
       yearLevel: widget.section['year_level'] as int,
-    );
+    ).then((data) {
+      setState(() {
+        _curriculumList = data;
+        _isLoading = false;
+      });
+    });
     _cyclesFuture = adminDBManager.getCycles();
     _instructorsFuture = adminDBManager.getinstructors();
   }
@@ -61,6 +71,12 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
   }
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final curriculumBySem = groupBy(_curriculumList, (s) => s['semester_no']);
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -86,212 +102,262 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
             ],
           ),
           Expanded(
-            child: FutureBuilder(
-              future: _curriculumFuture, 
-              builder: (context, snapshot) {
-                if(snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(),);
-                }
-                else if(snapshot.hasError) {
-                  return Text(snapshot.error.toString());
-                }
-            
-                final curriculumList = snapshot.data as List<Map<String, dynamic>>;
-                final curriculumBySem = groupBy(curriculumList, (s) => s['semester_no']);
-                
-                return ListView.builder(
-                  itemCount: curriculumBySem.keys.length,
-                  itemBuilder: (context, index) {
-                    final semKey = curriculumBySem.keys.elementAt(index);
-                    final subjects = curriculumBySem[semKey];
+            child: ListView.builder(
+              itemCount: curriculumBySem.keys.length,
+              itemBuilder: (context, index) {
+                final semKey = curriculumBySem.keys.elementAt(index);
+                final subjects = curriculumBySem[semKey];
 
-                    final rows = subjects!.map((subj) {
-                      final scheduleEntry = _scheduleEntries.putIfAbsent(subj['id'], () => ScheduleEntry());
-                      return SizedBox(
-                        height: 100,
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Table(
-                              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                              columnWidths: const {
-                                0 : FractionColumnWidth(0.08),
-                                1 : FractionColumnWidth(0.22),
-                                2 : FractionColumnWidth(0.08),
-                                3 : FractionColumnWidth(0.19),
-                                4 : FractionColumnWidth(0.1333),
-                                5 : FractionColumnWidth(0.1333),
-                                6 : FractionColumnWidth(0.1633),
-                              },
+                final rows = subjects!.where((subj) => !_removedSubjectIds.contains(subj['id'])).map((subj) {
+                  final scheduleEntry = _scheduleEntries.putIfAbsent(subj['id'], () => ScheduleEntry());
+                  return SizedBox(
+                    height: 100,
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Table(
+                          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                          columnWidths: const {
+                            0 : FractionColumnWidth(0.05),
+                            1 : FractionColumnWidth(0.08),
+                            2 : FractionColumnWidth(0.20),
+                            3 : FractionColumnWidth(0.08),
+                            4 : FractionColumnWidth(0.19),
+                            5 : FractionColumnWidth(0.1333),
+                            6 : FractionColumnWidth(0.1333),
+                            7 : FractionColumnWidth(0.1333),
+                          },
+                          children: [
+                            TableRow(
                               children: [
-                                TableRow(
-                                  children: [
-                                    Text(subj['subject']['code'], style: Theme.of(context).textTheme.bodySmall,),
-                                    Text(subj['subject']['name'], style: Theme.of(context).textTheme.bodySmall,),
-                                    FutureBuilder(
-                                      future: _cyclesFuture, 
-                                      builder: (context, snapshot) {
-                                        if(snapshot.connectionState == ConnectionState.waiting) {
-                                          return const Center(child: CircularProgressIndicator(),);
-                                        }
-                                        else if (snapshot.hasError) {
-                                          return Text(snapshot.error.toString());
-                                        }
-            
-                                        final cyclesList = snapshot.data as List<Map<String, dynamic>>;
-                                        final cyclesBySem = groupBy(cyclesList, (cycle) => cycle['semester']['number']);
-                                        final cyclesForSem = cyclesBySem[semKey] ?? [];
-                                        final cyclesDropdown = cyclesForSem.map((cycle) {
-                                          return DropdownMenuItem(
-                                            value: cycle['id'],
-                                            child: Text(
-                                              cycle['cycle_no'],
-                                              style: Theme.of(context).textTheme.bodySmall,
+                                Center(
+                                  child: IconButton(
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context, 
+                                        builder: (context) => AlertDialog(
+                                          title: Text('Remove ${subj['subject']['name']}?'),
+                                          content: const Text('This cannot be reversed'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context), 
+                                              child: Text('Cancel', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.primary),),
                                             ),
-                                          );
-                                        }).toList();
-            
-                                        return SizedBox(
-                                          height: 30,
-                                          width: 30,
-                                          child: ButtonTheme(
-                                            minWidth: 30,
-                                            alignedDropdown: true,
-                                            child: DropdownButton(
-                                              hint: const Text('Cycle'),
-                                              value: scheduleEntry.selectedCycle,
-                                              items: cyclesDropdown,
-                                              onChanged: (newValue) {
+                                            TextButton(
+                                              onPressed: () {
                                                 setState(() {
-                                                  scheduleEntry.selectedCycle = newValue;
+                                                  _removedSubjectIds.add(subj['id']);
+                                                  _scheduleEntries.remove(subj['id']);
                                                 });
-                                              },
+                                                Navigator.pop(context);
+                                              }, 
+                                              child: Text('Delete', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red),),
                                             ),
-                                          ),
-                                        );
-                                      }
-                                    ),
-                                    Center(
-                                      child: ToggleButtons(
-                                        isSelected: scheduleEntry.daysSelection,
-                                        onPressed: (index) {
-                                          setState(() {
-                                            scheduleEntry.daysSelection[index] = !scheduleEntry.daysSelection[index];
-                                          });
-                                        },
-                                        textStyle: Theme.of(context).textTheme.bodySmall,
-                                        constraints: const BoxConstraints(minWidth: 30, maxWidth: 100),
-                                        selectedColor: Theme.of(context).colorScheme.primary,
-                                        hoverColor: Theme.of(context).colorScheme.secondary.withAlpha(150),
-                                        fillColor: Theme.of(context).colorScheme.secondary,
-                                        borderRadius: BorderRadius.circular(20),
-                                        children: _daysList,
-                                        
-                                      ),
-                                    ),
-                                    Center(
-                                      child: SizedBox(
-                                        width: 140,
-                                        child: TextField(
-                                          controller: scheduleEntry.startTimeController,
-                                          readOnly: true,
-                                          decoration: InputDecoration(
-                                            labelText: "Start Time",
-                                            labelStyle: Theme.of(context).textTheme.bodySmall,
-                                            prefixIcon: Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary,),
-                                          ),
-                                          style: Theme.of(context).textTheme.bodySmall,
-                                          onTap: () async {
-                                            _selectStartTime(refId:  subj['id']);
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    Center(
-                                      child: SizedBox(
-                                        width: 140,
-                                        child: TextField(
-                                          controller: scheduleEntry.endTimeController,
-                                          readOnly: true,
-                                          decoration: InputDecoration(
-                                            labelText: "End Time",
-                                            labelStyle: Theme.of(context).textTheme.bodySmall,
-                                            prefixIcon: Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary,),
-                                          ),
-                                          style: Theme.of(context).textTheme.bodySmall,
-                                          onTap: () async {
-                                            _selectEndTime(refId:  subj['id']);
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                    FutureBuilder(
-                                      future: _instructorsFuture, 
-                                      builder: (context, snapshot) {
-                                        if(snapshot.connectionState == ConnectionState.waiting) {
-                                          return const Center(child: CircularProgressIndicator(),);
-                                        }
-                                        else if (snapshot.hasError) {
-                                          return Text(snapshot.error.toString());
-                                        }
-            
-                                        final instructorsList = snapshot.data as List<Map<String, dynamic>>;
-                                        final instructorsDropdown = instructorsList.map((inst) {
-                                          return DropdownMenuItem(
-                                            value: inst['id'],
-                                            child: Text(
-                                              '${inst['first_name']} ${inst['last_name']}',
-                                              style: Theme.of(context).textTheme.bodySmall,
-                                            )
-                                          );
-                                        }).toList();
-                                        return SizedBox(
-                                          child: DropdownButton(
-                                            hint: const Text('Instructor'),
-                                            items: instructorsDropdown, 
-                                            value: scheduleEntry.selectedInstructor,
-                                            onChanged: (newValue) {
-                                              setState(() {
-                                                scheduleEntry.selectedInstructor = newValue;
-                                              });
-                                            }
-                                          ),
-                                        );
-                                      }
-                                    ),
-                                  ]
+                                          ],
+                                        )
+                                      );
+                                      
+                                    }, 
+                                    icon: const Icon(Icons.delete, color: Colors.red,)
+                                  ),
                                 ),
-                              ],
+                                Text(subj['subject']['code'], style: Theme.of(context).textTheme.bodySmall,),
+                                Text(subj['subject']['name'], style: Theme.of(context).textTheme.bodySmall,),
+                                FutureBuilder(
+                                  future: _cyclesFuture, 
+                                  builder: (context, snapshot) {
+                                    if(snapshot.connectionState == ConnectionState.waiting) {
+                                      return const Center(child: CircularProgressIndicator(),);
+                                    }
+                                    else if (snapshot.hasError) {
+                                      return Text(snapshot.error.toString());
+                                    }
+        
+                                    final cyclesList = snapshot.data as List<Map<String, dynamic>>;
+                                    final cyclesBySem = groupBy(cyclesList, (cycle) => cycle['semester']['number']);
+                                    final cyclesForSem = cyclesBySem[semKey] ?? [];
+                                    final cyclesDropdown = cyclesForSem.map((cycle) {
+                                      return DropdownMenuItem(
+                                        value: cycle['id'],
+                                        child: Text(
+                                          cycle['cycle_no'],
+                                          style: Theme.of(context).textTheme.bodySmall,
+                                        ),
+                                      );
+                                    }).toList();
+        
+                                    return SizedBox(
+                                      height: 30,
+                                      width: 30,
+                                      child: ButtonTheme(
+                                        minWidth: 30,
+                                        alignedDropdown: true,
+                                        child: DropdownButton(
+                                          hint: const Text('Cycle'),
+                                          value: scheduleEntry.selectedCycle,
+                                          items: cyclesDropdown,
+                                          onChanged: (newValue) {
+                                            setState(() {
+                                              scheduleEntry.selectedCycle = newValue;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                ),
+                                Center(
+                                  child: ToggleButtons(
+                                    isSelected: scheduleEntry.daysSelection,
+                                    onPressed: (index) {
+                                      setState(() {
+                                        scheduleEntry.daysSelection[index] = !scheduleEntry.daysSelection[index];
+                                      });
+                                    },
+                                    textStyle: Theme.of(context).textTheme.bodySmall,
+                                    constraints: const BoxConstraints(minWidth: 30, maxWidth: 100),
+                                    selectedColor: Theme.of(context).colorScheme.primary,
+                                    hoverColor: Theme.of(context).colorScheme.secondary.withAlpha(150),
+                                    fillColor: Theme.of(context).colorScheme.secondary,
+                                    borderRadius: BorderRadius.circular(20),
+                                    children: _daysList,
+                                    
+                                  ),
+                                ),
+                                Center(
+                                  child: SizedBox(
+                                    width: 140,
+                                    child: TextField(
+                                      controller: scheduleEntry.startTimeController,
+                                      readOnly: true,
+                                      decoration: InputDecoration(
+                                        labelText: "Start Time",
+                                        labelStyle: Theme.of(context).textTheme.bodySmall,
+                                        prefixIcon: Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary,),
+                                      ),
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                      onTap: () async {
+                                        _selectStartTime(refId:  subj['id']);
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                Center(
+                                  child: SizedBox(
+                                    width: 140,
+                                    child: TextField(
+                                      controller: scheduleEntry.endTimeController,
+                                      readOnly: true,
+                                      decoration: InputDecoration(
+                                        labelText: "End Time",
+                                        labelStyle: Theme.of(context).textTheme.bodySmall,
+                                        prefixIcon: Icon(Icons.access_time, color: Theme.of(context).colorScheme.primary,),
+                                      ),
+                                      style: Theme.of(context).textTheme.bodySmall,
+                                      onTap: () async {
+                                        _selectEndTime(refId:  subj['id']);
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                FutureBuilder(
+                                  future: _instructorsFuture, 
+                                  builder: (context, snapshot) {
+                                    if(snapshot.connectionState == ConnectionState.waiting) {
+                                      return const Center(child: CircularProgressIndicator(),);
+                                    }
+                                    else if (snapshot.hasError) {
+                                      return Text(snapshot.error.toString());
+                                    }
+        
+                                    final instructorsList = snapshot.data as List<Map<String, dynamic>>;
+                                    final instructorsDropdown = instructorsList.map((inst) {
+                                      return DropdownMenuItem(
+                                        value: inst['id'],
+                                        child: Text(
+                                          '${inst['first_name']} ${inst['last_name']}',
+                                          style: Theme.of(context).textTheme.bodySmall,
+                                        )
+                                      );
+                                    }).toList();
+                                    return SizedBox(
+                                      child: DropdownButton(
+                                        hint: const Text('Instructor'),
+                                        items: instructorsDropdown, 
+                                        value: scheduleEntry.selectedInstructor,
+                                        onChanged: (newValue) {
+                                          setState(() {
+                                            scheduleEntry.selectedInstructor = newValue;
+                                          });
+                                        }
+                                      ),
+                                    );
+                                  }
+                                ),
+                              ]
                             ),
-                          ),
+                          ],
                         ),
-                      );
-                    }).toList();
-            
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Semester $semKey"),
-                        ConstrainedBox(
-                          constraints: BoxConstraints(maxHeight: rows.length * 100),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: rows.length, 
-                            itemBuilder: (context, index) => rows[index]
-                          ),
-                        ),
-                      ],
-                    );
-                  }
+                      ),
+                    ),
+                  );
+                }).toList();
+        
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text("Semester $semKey"),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: rows.length * 100),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: rows.length, 
+                        itemBuilder: (context, index) => rows[index]
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        final selectedSubject = await showDialog(
+                          context: context, 
+                          builder: (context) {
+                            return AddSubjectToSchedDialog(courseId: widget.section['course']['id'],);
+                          }
+                        );
+                        logger.d(selectedSubject);
+                          if (selectedSubject != null) {
+                          setState(() {
+                            _curriculumList.add(selectedSubject);
+                            _scheduleEntries.putIfAbsent(selectedSubject['id'], () => ScheduleEntry());
+                          });
+                          setState(() {});
+                        }
+                      }, 
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.add),
+                          const SizedBox(width: 10,),
+                          Text(
+                            'ADD SUBJECT', 
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold
+                            ),
+                          )
+                        ],
+                      )
+                    ),
+                  ],
                 );
               }
-            ),
+            )
           ),
         ],
       ),
     );
   }
+
   Future _selectStartTime({required int refId}) async {
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context, 

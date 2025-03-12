@@ -1,12 +1,16 @@
+import 'package:class_sched/admin_side/dashboard_page.dart';
+import 'package:class_sched/admin_side/notification_page.dart';
 import 'package:class_sched/auth_gate.dart';
 import 'package:flutter/material.dart';
 import 'package:class_sched/services/auth_service.dart';
 
 class BaseLayout extends StatefulWidget {
   final Widget body;
+  final int selectedIndex;
   const BaseLayout({
     super.key,
-    required this.body
+    required this.body,
+    this.selectedIndex = 0
   });
 
   @override
@@ -15,6 +19,7 @@ class BaseLayout extends StatefulWidget {
 
 class _BaseLayoutState extends State<BaseLayout> {
   final authService = AuthService();
+  late int _generalSelectedNavigIndex;
 
   void logout() async {
     try {
@@ -31,6 +36,13 @@ class _BaseLayoutState extends State<BaseLayout> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error $e')));
       }
     }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _generalSelectedNavigIndex = widget.selectedIndex;
   }
 
   @override
@@ -58,10 +70,21 @@ class _BaseLayoutState extends State<BaseLayout> {
               width: 120,
               fit: BoxFit.fitWidth,
             ),
-            const Image(
-              image: AssetImage('assets/images/logo3.png'),
-              width: 150,
-              fit: BoxFit.fitWidth,
+            MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context, 
+                    MaterialPageRoute(builder: (context) => BaseLayout(body: DashboardPage()))
+                  );
+                },
+                child: const Image(
+                  image: AssetImage('assets/images/logo3.png'),
+                  width: 150,
+                  fit: BoxFit.fitWidth,
+                ),
+              ),
             ),
             IconButton(
               onPressed: () {} , 
@@ -69,7 +92,6 @@ class _BaseLayoutState extends State<BaseLayout> {
             )
           ],
         ),
-        //title: Image(image: image),
       ),
       drawer: Drawer(
         child: Column(
@@ -80,28 +102,38 @@ class _BaseLayoutState extends State<BaseLayout> {
                 extended: true,
                 destinations: const [
                   NavigationRailDestination(
-                    icon: Icon(Icons.person_2_outlined, color: Colors.white,), 
-                    selectedIcon: Icon(Icons.person_2),
-                    label: Text('Accounts', style: TextStyle(color: Colors.white),)
-                  ),
-                  NavigationRailDestination(
                     icon: Icon(Icons.data_thresholding_outlined, color: Colors.white,),
                     selectedIcon: Icon(Icons.data_thresholding_rounded),
                     label: Text('Dashboard', style: TextStyle(color: Colors.white),)
-                  ),
-                  NavigationRailDestination(
-                    icon: Icon(Icons.settings, color: Colors.white,),
-                    selectedIcon: Icon(Icons.settings),
-                    label: Text('School Setup', style: TextStyle(color: Colors.white),)
                   ),
                   NavigationRailDestination(
                     icon: Icon(Icons.notifications_active_outlined, color: Colors.white,),
                     selectedIcon: Icon(Icons.notifications_active_rounded),
                     label: Text('Notifications', style: TextStyle(color: Colors.white),)
                   ),
-                  
                 ], 
-                selectedIndex: 1
+                selectedIndex: _generalSelectedNavigIndex,
+                onDestinationSelected: (index) {
+                  setState(() {
+                    _generalSelectedNavigIndex = index;
+                  });
+
+                  Widget nextPage;
+                  switch (index) {
+                    case 0:
+                      nextPage = const DashboardPage(); 
+                      break;
+                    case 1:
+                      nextPage = const NotificationPage(); 
+                      break;
+                    default:
+                      nextPage = widget.body; 
+                  }
+
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => BaseLayout(body: nextPage, selectedIndex: index,)),
+                  );
+                }
               ),
             ),
             GestureDetector(
