@@ -25,6 +25,10 @@ class _SchedulesByCoursePageState extends State<SchedulesByCoursePage> {
             '${widget.course['name']} ${widget.course['major']}',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
+          Divider(
+            thickness: 1,
+            color: Theme.of(context).primaryColor,
+          ),
           Expanded(
             child: FutureBuilder(
               future: adminDBManager.getSections(courseId: widget.course['id'] as int), 

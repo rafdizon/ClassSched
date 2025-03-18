@@ -1,5 +1,6 @@
 import 'package:class_sched/admin_side/base_layout.dart';
 import 'package:class_sched/admin_side/dashboard_page.dart';
+import 'package:class_sched/client_side/student_profile_page.dart';
 import 'package:class_sched/log_in_page.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -22,7 +23,14 @@ class AuthGate extends StatelessWidget {
         final session = Supabase.instance.client.auth.currentSession;
 
         if(session != null) {
-          return const BaseLayout(body: DashboardPage(),);
+          final userEmail = session.user.email;
+
+          if(userEmail == "classschedspusm@gmail.com") {
+            return const BaseLayout(body: DashboardPage(),);
+          }
+          else {
+            return const StudentProfilePage();
+          }
         }
         else {
           return const LogInPage();

@@ -69,6 +69,10 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
                 ),
               ],
             ),
+            Divider(
+              color: Theme.of(context).colorScheme.primary,
+              thickness: 1,
+            ),
             const SizedBox(height: 10,),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -228,7 +232,8 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
                                     sortColumnIndex: sortIndex,
                                     columnSpacing: 30,
                                     dataTextStyle: Theme.of(context).textTheme.bodySmall,
-                                    border: const TableBorder(top: BorderSide()),
+                                    headingRowColor: WidgetStatePropertyAll(Theme.of(context).colorScheme.secondary),
+
                                     columns: [
                                       const DataColumn(label: Text('')),
                                       const DataColumn(label: Text('')),

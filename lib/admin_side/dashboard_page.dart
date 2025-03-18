@@ -29,127 +29,132 @@ class _DashboardPageState extends State<DashboardPage> {
             'Dashboard',
             style: Theme.of(context).textTheme.displayMedium,
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                SizedBox( 
-                  width: 300,
-                  height: 50,
-                  child: Card(
-                    elevation: 5,
-                    child: FutureBuilder(
-                      future: adminDBManager.database.from('academic_year').select().eq('is_active', true), 
-                      builder: (context, snapshot) {
-                        if(snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator(),);
-                        } else if(snapshot.hasError) {
-                          return Text(snapshot.error.toString());
-                        }
-                  
-                        final acadYearList = snapshot.data;
-                        final acadYear = acadYearList?.firstOrNull?['academic_year'];
-            
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          spacing: 20,
-                          children: [
-                            Icon(Icons.calendar_month),
-                            Text(acadYear, style: Theme.of(context).textTheme.bodyMedium,),
-                          ],
-                        );
-                      }
-                    )
-                  ),
-                ),
-                SizedBox( 
-                  width: 300,
-                  height: 50,
-                  child: Card(
-                    elevation: 5,
-                    child: FutureBuilder(
-                      future: adminDBManager.database.from('student').count(), 
-                      builder: (context, snapshot) {
-                        if(snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator(),);
-                        } else if(snapshot.hasError) {
-                          return Text(snapshot.error.toString());
-                        }
-                  
-                        final studentCount = snapshot.data as int;
-            
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          spacing: 20,
-                          children: [
-                            Icon(Icons.groups_sharp),
-                            Text(studentCount.toString(), style: Theme.of(context).textTheme.bodyMedium,),
-                            Text('Students Enrolled', style: Theme.of(context).textTheme.bodySmall,),
-                          ],
-                        );
-                      }
-                    )
-                  ),
-                ),
-                SizedBox( 
-                  width: 300,
-                  height: 50,
-                  child: Card(
-                    elevation: 5,
-                    child: FutureBuilder(
-                      future: adminDBManager.database.from('course').count(), 
-                      builder: (context, snapshot) {
-                        if(snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator(),);
-                        } else if(snapshot.hasError) {
-                          return Text(snapshot.error.toString());
-                        }
-                  
-                        final courseCount = snapshot.data as int;
-            
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          spacing: 20,
-                          children: [
-                            Icon(Icons.star),
-                            Text((courseCount - 1).toString(), style: Theme.of(context).textTheme.bodyMedium,),
-                            Text('Courses Offered', style: Theme.of(context).textTheme.bodySmall,),
-                          ],
-                        );
-                      }
-                    )
-                  ),
-                ),
-                SizedBox( 
-                  width: 300,
-                  height: 50,
-                  child: Card(
-                    elevation: 5,
-                    child: FutureBuilder(
-                      future: adminDBManager.database.from('instructor').count(), 
-                      builder: (context, snapshot) {
-                        if(snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator(),);
-                        } else if(snapshot.hasError) {
-                          return Text(snapshot.error.toString());
-                        }
-                  
-                        final instructorCount = snapshot.data as int;
-            
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          spacing: 20,
-                          children: [
-                            Icon(Icons.group),
-                            Text(instructorCount.toString(), style: Theme.of(context).textTheme.bodyMedium,),
-                            Text('Instructors', style: Theme.of(context).textTheme.bodySmall,),
-                          ],
-                        );
-                      }
-                    )
-                  ),
-                ),
-              ],
+          Offstage(
+            offstage: MediaQuery.of(context).size.width <= 1000,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return Row(
+                  children: [
+                    SizedBox( 
+                      width: constraints.maxWidth / 4,
+                      height: 50,
+                      child: Card(
+                        elevation: 5,
+                        child: FutureBuilder(
+                          future: adminDBManager.database.from('academic_year').select().eq('is_active', true), 
+                          builder: (context, snapshot) {
+                            if(snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator(),);
+                            } else if(snapshot.hasError) {
+                              return Text(snapshot.error.toString());
+                            }
+                      
+                            final acadYearList = snapshot.data;
+                            final acadYear = acadYearList?.firstOrNull?['academic_year'];
+                
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              spacing: 20,
+                              children: [
+                                Icon(Icons.calendar_month),
+                                Text(acadYear, style: Theme.of(context).textTheme.bodyMedium,),
+                              ],
+                            );
+                          }
+                        )
+                      ),
+                    ),
+                    SizedBox( 
+                      width: constraints.maxWidth / 4,
+                      height: 50,
+                      child: Card(
+                        elevation: 5,
+                        child: FutureBuilder(
+                          future: adminDBManager.database.from('student').count(), 
+                          builder: (context, snapshot) {
+                            if(snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator(),);
+                            } else if(snapshot.hasError) {
+                              return Text(snapshot.error.toString());
+                            }
+                      
+                            final studentCount = snapshot.data as int;
+                
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              spacing: 20,
+                              children: [
+                                Icon(Icons.groups_sharp),
+                                Text(studentCount.toString(), style: Theme.of(context).textTheme.bodyMedium,),
+                                Text('Students Enrolled', style: Theme.of(context).textTheme.bodySmall,),
+                              ],
+                            );
+                          }
+                        )
+                      ),
+                    ),
+                    SizedBox( 
+                      width: constraints.maxWidth / 4,
+                      height: 50,
+                      child: Card(
+                        elevation: 5,
+                        child: FutureBuilder(
+                          future: adminDBManager.database.from('course').count(), 
+                          builder: (context, snapshot) {
+                            if(snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator(),);
+                            } else if(snapshot.hasError) {
+                              return Text(snapshot.error.toString());
+                            }
+                      
+                            final courseCount = snapshot.data as int;
+                
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              spacing: 20,
+                              children: [
+                                Icon(Icons.star),
+                                Text((courseCount - 1).toString(), style: Theme.of(context).textTheme.bodyMedium,),
+                                Text('Courses Offered', style: Theme.of(context).textTheme.bodySmall,),
+                              ],
+                            );
+                          }
+                        )
+                      ),
+                    ),
+                    SizedBox( 
+                      width: constraints.maxWidth / 4,
+                      height: 50,
+                      child: Card(
+                        elevation: 5,
+                        child: FutureBuilder(
+                          future: adminDBManager.database.from('instructor').count(), 
+                          builder: (context, snapshot) {
+                            if(snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator(),);
+                            } else if(snapshot.hasError) {
+                              return Text(snapshot.error.toString());
+                            }
+                      
+                            final instructorCount = snapshot.data as int;
+                
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              spacing: 20,
+                              children: [
+                                Icon(Icons.group),
+                                Text(instructorCount.toString(), style: Theme.of(context).textTheme.bodyMedium,),
+                                Text('Instructors', style: Theme.of(context).textTheme.bodySmall,),
+                              ],
+                            );
+                          }
+                        )
+                      ),
+                    ),
+                  ],
+                );
+              } 
+              
             ),
           ),
           Expanded(
@@ -157,12 +162,11 @@ class _DashboardPageState extends State<DashboardPage> {
               builder: (BuildContext context, BoxConstraints constraints) {
                 double screenHeight = constraints.maxHeight;
                 double screenWidth = constraints.maxWidth;
-            
                 return SizedBox(
                   height: screenHeight - 102,
                   width: screenWidth,
                   child: GridView.count(
-                    crossAxisCount: screenWidth > 500 ? 2 : 1,
+                    crossAxisCount: screenWidth > 950 ? 2 : 1,
                     crossAxisSpacing: 50,
                     childAspectRatio: 4,
                     children: [

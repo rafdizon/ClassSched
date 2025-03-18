@@ -3,6 +3,7 @@ import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:class_sched/ui_elements/add_subject_to_sched_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
 
 class ScheduleEntry {
   dynamic selectedCycle;
@@ -43,6 +44,67 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
 
   List<Map<String, dynamic>> _curriculumList = [];
   bool _isLoading = true;
+
+  int _parseTime(String timeStr) {
+    try {
+      final parts = timeStr.split(' ');
+      if (parts.length != 2) return 0;
+      final timePart = parts[0]; // e.g., "8:00"
+      final period = parts[1]; // "AM" or "PM"
+      final timeParts = timePart.split(':');
+      int hour = int.parse(timeParts[0]);
+      int minute = int.parse(timeParts[1]);
+      if (period == 'PM' && hour != 12) {
+        hour += 12;
+      } else if (period == 'AM' && hour == 12) {
+        hour = 0;
+      }
+      return hour * 60 + minute;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  bool _hasConflict(int subjectId, List<Map<String, dynamic>> visibleSubjects) {
+    final currentEntry = _scheduleEntries[subjectId];
+    if (currentEntry == null ||
+        currentEntry.startTimeController.text.isEmpty ||
+        currentEntry.endTimeController.text.isEmpty ||
+        currentEntry.selectedCycle == null) {
+      return false;
+    }
+    int currentStart = _parseTime(currentEntry.startTimeController.text);
+    int currentEnd = _parseTime(currentEntry.endTimeController.text);
+
+    for (var subj in visibleSubjects) {
+      if (subj['id'] == subjectId) continue;
+      final otherEntry = _scheduleEntries[subj['id']];
+      if (otherEntry == null ||
+          otherEntry.startTimeController.text.isEmpty ||
+          otherEntry.endTimeController.text.isEmpty ||
+          otherEntry.selectedCycle == null) {
+        continue;
+      }
+      if (currentEntry.selectedCycle == otherEntry.selectedCycle) {
+        if (_daysOverlap(currentEntry.daysSelection, otherEntry.daysSelection)) {
+          int otherStart = _parseTime(otherEntry.startTimeController.text);
+          int otherEnd = _parseTime(otherEntry.endTimeController.text);
+
+          if (currentStart < otherEnd && otherStart < currentEnd) {
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  bool _daysOverlap(List<bool> daysA, List<bool> daysB) {
+    for (int i = 0; i < daysA.length; i++) {
+      if (daysA[i] && daysB[i]) return true;
+    }
+    return false;
+  }
 
   @override
   void initState() {
@@ -107,12 +169,15 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
               itemBuilder: (context, index) {
                 final semKey = curriculumBySem.keys.elementAt(index);
                 final subjects = curriculumBySem[semKey];
-
-                final rows = subjects!.where((subj) => !_removedSubjectIds.contains(subj['id'])).map((subj) {
+                
+                final visibleSubjects = subjects!.where((subj) => !_removedSubjectIds.contains(subj['id'])).toList();
+                final rows = visibleSubjects.map((subj) {
                   final scheduleEntry = _scheduleEntries.putIfAbsent(subj['id'], () => ScheduleEntry());
+                  bool hasConflict = _hasConflict(subj['id'], visibleSubjects);
                   return SizedBox(
                     height: 100,
                     child: Card(
+                      color: hasConflict ? Colors.red[200] : null,
                       child: Padding(
                         padding: const EdgeInsets.all(20),
                         child: Table(
@@ -410,6 +475,25 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
         return;
       }
     }
+
+    final curriculumBySem = groupBy(_curriculumList, (s) => s['semester_no']);
+    
+    for (var semKey in curriculumBySem.keys) {
+      final subjects = curriculumBySem[semKey];
+      final visibleSubjects = subjects!.where((subj) => !_removedSubjectIds.contains(subj['id'])).toList();
+      for (var subj in visibleSubjects) {
+        if (_hasConflict(subj['id'], visibleSubjects)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Schedule conflict found in Semester $semKey. Please resolve conflicts before saving.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          return;
+        }
+      }
+    }
+
     for (var id in _scheduleEntries.keys) {
       final startTime = _scheduleEntries[id]!.startTimeController.text;
       final endTime = _scheduleEntries[id]!.endTimeController.text;
@@ -418,7 +502,6 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
       final sectionId = widget.section['id'];
       final daysList = _convertDaysSelection(_scheduleEntries[id]?.daysSelection ?? []);
 
-
       final error = await adminDBManager.addScheduleSection(
         startTime: startTime,
         endTime: endTime,
@@ -426,7 +509,7 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
         curriculumId: id,
         sectionId: sectionId,
         instructorId: instructorId,
-        days: daysList
+        days: daysList,
       );
 
       if (error != null) {
@@ -441,6 +524,7 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
     }
     Navigator.pop(context);
   }
+
   List<String> _convertDaysSelection(List<bool> daysSelection) {
     final dayNames = ['M', 'T', 'W', 'Th', 'F', 'Sa'];
     return List.generate(daysSelection.length, (i) => daysSelection[i] ? dayNames[i] : null)

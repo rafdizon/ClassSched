@@ -49,6 +49,7 @@ class _BaseLayoutState extends State<BaseLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(20),
         bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: Theme.of(context).colorScheme.primary, height: 0.5,)),
         foregroundColor: Theme.of(context).colorScheme.primary,
         automaticallyImplyLeading: false,
@@ -87,7 +88,45 @@ class _BaseLayoutState extends State<BaseLayout> {
               ),
             ),
             IconButton(
-              onPressed: () {} , 
+              onPressed: () {
+                showDialog(
+                  context: context, 
+                  builder: (context) {
+                    return AlertDialog(
+                      title: Text('Admin'),
+                      content: Text('classschedspusm@edu.ph'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            'Back', 
+                            style: 
+                            TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            logout();
+                            Navigator.pop(context);
+                          },
+                          child: const Text(
+                            'Logout',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                );
+              } , 
               icon: const Icon(Icons.person_outline)
             )
           ],
@@ -98,18 +137,18 @@ class _BaseLayoutState extends State<BaseLayout> {
           children: [
             Expanded(
               child: NavigationRail(
-                backgroundColor: Theme.of(context).colorScheme.primary,
+                backgroundColor: Theme.of(context).colorScheme.tertiary,
                 extended: true,
                 destinations: const [
                   NavigationRailDestination(
-                    icon: Icon(Icons.data_thresholding_outlined, color: Colors.white,),
+                    icon: Icon(Icons.data_thresholding_outlined),
                     selectedIcon: Icon(Icons.data_thresholding_rounded),
-                    label: Text('Dashboard', style: TextStyle(color: Colors.white),)
+                    label: Text('Dashboard')
                   ),
                   NavigationRailDestination(
-                    icon: Icon(Icons.notifications_active_outlined, color: Colors.white,),
+                    icon: Icon(Icons.notifications_active_outlined),
                     selectedIcon: Icon(Icons.notifications_active_rounded),
-                    label: Text('Notifications', style: TextStyle(color: Colors.white),)
+                    label: Text('Notifications')
                   ),
                 ], 
                 selectedIndex: _generalSelectedNavigIndex,
@@ -140,12 +179,12 @@ class _BaseLayoutState extends State<BaseLayout> {
               onTap: logout,
               child: Container(
                 padding: const EdgeInsets.all(20),
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.tertiary,
                 child: const Row(
                   children: [
-                    Icon(Icons.logout, color: Colors.white,),
+                    Icon(Icons.logout),
                     SizedBox(width: 10,),
-                    Text('Logout', style: TextStyle(color: Colors.white))
+                    Text('Logout')
                   ],
                 ),
               ),

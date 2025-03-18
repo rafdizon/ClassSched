@@ -36,22 +36,26 @@ class _DashboardMenuItemState extends State<DashboardMenuItem> {
               padding: const EdgeInsets.all(10.0),
               child: Icon(widget.icon, size: 80, color: isHovered ? Colors.white : Theme.of(context).colorScheme.secondary,),
             ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.label, 
-                style: TextStyle(
-                  color: isHovered ? Colors.white : Colors.black
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.label, 
+                  style: TextStyle(
+                    color: isHovered ? Colors.white : Colors.black,
+                    overflow: TextOverflow.ellipsis
+                    ),
                   ),
-                ),
-                Text(widget.description, 
-                style: TextStyle(
-                  color: isHovered ? Colors.white : Colors.black,
-                  fontSize: 12
+                  Text(widget.description, 
+                  style: TextStyle(
+                    color: isHovered ? Colors.white : Colors.black,
+                    overflow: TextOverflow.ellipsis,
+                    fontSize: 12
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ]
         )

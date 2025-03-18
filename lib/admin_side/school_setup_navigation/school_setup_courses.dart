@@ -175,18 +175,6 @@ class _SchoolSetupCoursesState extends State<SchoolSetupCourses> {
                         }
                       ),
                     ),
-                    DataCell(
-                      IconButton(
-                        onPressed: () {
-                          showDialog(
-                            context: context, 
-                            barrierDismissible: false,
-                            builder: (context) => const Placeholder()
-                          );
-                        }, 
-                        icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary,)
-                      )
-                    ),
                     DataCell(Text(course['name'], style: Theme.of(context).textTheme.bodySmall,)),
                     DataCell(Text(course['major'] ?? '', style: Theme.of(context).textTheme.bodySmall,)),
                     DataCell(Text(course['level'], style: Theme.of(context).textTheme.bodySmall,)),
@@ -205,9 +193,8 @@ class _SchoolSetupCoursesState extends State<SchoolSetupCourses> {
                       sortColumnIndex: _sortIndex,
                       columns: [
                         const DataColumn(label: Text('')),
-                        const DataColumn(label: Text('')),
                         DataColumn(
-                          label: Text('Course Name'),
+                          label: const Text('Course Name'),
                           onSort: (columnIndex, ascending) {
                             setState(() {
                               _isSort = !_isSort;
@@ -220,7 +207,7 @@ class _SchoolSetupCoursesState extends State<SchoolSetupCourses> {
                         const DataColumn(label: Text('Major')),
                         const DataColumn(label: Text('Degree Level')),
                         DataColumn(
-                          label: Text('Short Form'),
+                          label: const Text('Short Form'),
                           onSort: (columnIndex, ascending) {
                             setState(() {
                               _isSort = !_isSort;

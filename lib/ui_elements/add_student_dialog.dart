@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:class_sched/services/password_generator.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:logger/logger.dart';
 
 class AddStudentDialog extends StatefulWidget {
   const AddStudentDialog({super.key});
@@ -9,6 +13,7 @@ class AddStudentDialog extends StatefulWidget {
   State<AddStudentDialog> createState() => _AddStudentDialogState();
 }
 
+final logger = Logger();
 class _AddStudentDialogState extends State<AddStudentDialog> {
   var _dropdownValue;
   var _selectedYear;
@@ -32,6 +37,28 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
     _selectedYear = null;
     _selectedSex = null;
     _selectedStatus = null;
+  }
+  Future sendEmail({required String email, required String name, required String password}) async {
+    final response = await http.post(
+      Uri.parse('https://api.brevo.com/v3/smtp/email'),
+      headers: {
+        'accept' : 'application/json',
+        'api-key' : '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',
+        'content-type': 'application/json'
+      },
+      body: jsonEncode({
+        "sender": {"name": "ClassSched SPUSM", "email": "classschedspusm@gmail.com"},
+        "to": [{"email": email, "name": name}],
+        "subject": "ClassSched SPUSM Account",
+        "textContent": "Login to your ClassSched SPUSM account using these credentials:\nEmail: $email\nPassword: $password\n\nDON'T SHARE THESE TO ANYONE, CHANGE YOUR PASSWORD IMMEDIATELY!",
+      })
+    );
+
+      if (response.statusCode == 201) {
+        logger.d('Email sent successfully!');
+      } else {
+        logger.d('Failed: ${response.body}');
+      }
   }
   @override
   Widget build(BuildContext context) {
@@ -390,6 +417,11 @@ class _AddStudentDialogState extends State<AddStudentDialog> {
                             context: context 
                           );
 
+                          await sendEmail(
+                            email: _emailController.text, 
+                            name: '${_fnameController.text} ${_lnameController.text}', 
+                            password: _passwordController.text
+                          );
                           setState(() {
                             _isLoading = false;
                           });
