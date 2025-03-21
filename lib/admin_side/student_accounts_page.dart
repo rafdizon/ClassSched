@@ -20,34 +20,36 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
   bool sort = false;
   int sortIndex = 0;
   Stream<List<Map<String, dynamic>>>? streamStudents;
+  String _searchQuery = '';
 
   void initStreamStudents() async {
     final sectionMap = await adminDBManager.fetchSectionData();
-    
+
     setState(() {
-      streamStudents = adminDBManager.database.from('student').stream(primaryKey: ['id']).map((students) => students.map((student) 
-      {
-        final section = sectionMap[student['section_id']];
-        return {
-          'id' : student['id'], 
-          'student_no' : student['student_no'], 
-          'first_name' : student['first_name'], 
-          'middle_name' : student['middle_name'], 
-          'last_name' : student['last_name'], 
-          'year_level' : section?['year_level'] as int? ?? 0, 
-          'course' : section?['course']?['name'] ?? '',
-          'course_id' : section?['course']?['id'] ?? 0,
-          'is_regular' : student['is_regular'] ? 'Regular' : 'Irregular', 
-          'email' : student['email'], 
-          'sex' : student['sex'],
-        };
-      }).toList());
+      streamStudents = adminDBManager.database
+          .from('student')
+          .stream(primaryKey: ['id'])
+          .map((students) => students.map((student) {
+                final section = sectionMap[student['section_id']];
+                return {
+                  'id': student['id'],
+                  'student_no': student['student_no'],
+                  'first_name': student['first_name'],
+                  'middle_name': student['middle_name'],
+                  'last_name': student['last_name'],
+                  'year_level': section?['year_level'] as int? ?? 0,
+                  'course': section?['course']?['name'] ?? '',
+                  'course_id': section?['course']?['id'] ?? 0,
+                  'is_regular': student['is_regular'] ? 'Regular' : 'Irregular',
+                  'email': student['email'],
+                  'sex': student['sex'],
+                };
+              }).toList());
     });
   }
-  
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
     initStreamStudents();
   }
@@ -76,6 +78,11 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                       suffixIcon: Icon(Icons.search),
                       hintText: 'Search',
                     ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
                   ),
                 ),
               ],
@@ -84,80 +91,121 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
               color: Theme.of(context).colorScheme.primary,
               thickness: 1,
             ),
-            const SizedBox(height: 10,),
+            const SizedBox(
+              height: 10,
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextButton(
-                  onPressed: (){
-                    showDialog <Widget>(
-                      context: context, 
-                      barrierDismissible: false,
-                      builder: (context) => AddStudentDialog()
-                    );
-                  },
-                  style: TextButton.styleFrom(
-                    fixedSize: const Size(80, 40),
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.add, color: Colors.white,),
-                      Text('Add', style: TextStyle(color: Colors.white),)
-                    ],
-                  )
-                ),
+                    onPressed: () {
+                      showDialog<Widget>(
+                          context: context,
+                          barrierDismissible: false,
+                          builder: (context) => AddStudentDialog());
+                    },
+                    style: TextButton.styleFrom(
+                        fixedSize: const Size(80, 40),
+                        backgroundColor:
+                            Theme.of(context).colorScheme.primary,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10))),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.add,
+                          color: Colors.white,
+                        ),
+                        Text(
+                          'Add',
+                          style: TextStyle(color: Colors.white),
+                        )
+                      ],
+                    )),
                 IconButton(
                   onPressed: () {
-                    setState(() {
-                      
-                    });
+                    setState(() {});
                   },
-                  icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.primary,),
+                  icon: Icon(
+                    Icons.refresh,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 10,),
+            const SizedBox(
+              height: 10,
+            ),
             Expanded(
-              child: LayoutBuilder(
+              child: LayoutBuilder(builder: (context, constraints) {
+                double screenHeight = constraints.maxHeight;
+                double screenWidth = constraints.maxWidth;
 
-                builder: (context, constraints) {
-                  double screenHeight = constraints.maxHeight;
-                  double screenWidth = constraints.maxWidth;
-
-                  return StreamBuilder<Object>(
+                return StreamBuilder<Object>(
                     stream: streamStudents,
                     builder: (context, snapshot) {
-                      if(snapshot.connectionState == ConnectionState.waiting || snapshot.data == null){
-                        return const Center(child: CircularProgressIndicator(),);
-                      }
-                      else if(snapshot.hasError){
-                        return Center(child: Text('Error: ${snapshot.error}'));
+                      if (snapshot.connectionState == ConnectionState.waiting ||
+                          snapshot.data == null) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      } else if (snapshot.hasError) {
+                        return Center(
+                          child: Text('Error: ${snapshot.error}'),
+                        );
                       }
 
-                      logger.d(snapshot.data);
                       final studentList = snapshot.data! as List<Map<String, dynamic>>;
-                      final studentData = studentList.map<DataRow>((student){
-                        return DataRow(
-                          cells: [
-                            DataCell(
-                              IconButton(
-                                onPressed: () {
-                                  showDialog(
-                                    context: context, 
+
+                      final filteredStudents = studentList.where((student) {
+                        if (_searchQuery.isEmpty) return true;
+                        final query = _searchQuery.toLowerCase();
+                        return (student['student_no']
+                                    ?.toString()
+                                    .toLowerCase()
+                                    .contains(query) ??
+                                false) ||
+                            (student['first_name']
+                                    ?.toString()
+                                    .toLowerCase()
+                                    .contains(query) ??
+                                false) ||
+                            (student['middle_name']
+                                    ?.toString()
+                                    .toLowerCase()
+                                    .contains(query) ??
+                                false) ||
+                            (student['last_name']
+                                    ?.toString()
+                                    .toLowerCase()
+                                    .contains(query) ??
+                                false) ||
+                            (student['email']
+                                    ?.toString()
+                                    .toLowerCase()
+                                    .contains(query) ??
+                                false);
+                      }).toList();
+
+                      final studentData =
+                          filteredStudents.map<DataRow>((student) {
+                        return DataRow(cells: [
+                          DataCell(IconButton(
+                              onPressed: () {
+                                showDialog(
+                                    context: context,
                                     barrierDismissible: false,
-                                    builder: (context) => EditStudentDialog(student: student)
-                                  );
-                                }, 
-                                icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary,)
-                              )
-                            ),
-                            DataCell(
-                              IconButton(
-                                onPressed: () {
-                                  showDialog(
-                                    context: context, 
+                                    builder: (context) =>
+                                        EditStudentDialog(student: student));
+                              },
+                              icon: Icon(
+                                Icons.edit,
+                                color: Theme.of(context).colorScheme.primary,
+                              ))),
+                          DataCell(IconButton(
+                              onPressed: () {
+                                showDialog(
+                                    context: context,
                                     builder: (context) {
                                       return Dialog(
                                         child: SizedBox(
@@ -166,44 +214,79 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                           child: Padding(
                                             padding: const EdgeInsets.all(20),
                                             child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
                                               children: [
-                                                Text('Are you sure to delete? This cannot be undone'),
+                                                const Text(
+                                                    'Are you sure to delete? This cannot be undone'),
                                                 const Spacer(),
                                                 Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
                                                   children: [
                                                     TextButton(
-                                                      onPressed: () {
-                                                        Navigator.of(context).pop();
-                                                      }, 
-                                                      child: Text(
-                                                        'Cancel',
-                                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black, fontWeight: FontWeight.bold)
-                                                      )
-                                                    ),
+                                                        onPressed: () {
+                                                          Navigator.of(context)
+                                                              .pop();
+                                                        },
+                                                        child: Text(
+                                                          'Cancel',
+                                                          style: Theme.of(
+                                                                  context)
+                                                              .textTheme
+                                                              .bodySmall
+                                                              ?.copyWith(
+                                                                  color: Colors
+                                                                      .black,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold),
+                                                        )),
                                                     TextButton(
-                                                      onPressed: () async {
-                                                        final error = await adminDBManager.deleteUser(
-                                                          id: student['id'],
-                                                          email: student['email'].toString(),
-                                                          isStudent: true
-                                                        );
-                                                        if(error != null && mounted){
-                                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error $error'), backgroundColor: Colors.red));
-                                                        }
-                                                        else {
-                                                          setState(() {
-                                                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Successfully deleted student!'), backgroundColor: Theme.of(context).colorScheme.primary));
-                                                          });
-                                                        }
-                                                        Navigator.of(context).pop();
-                                                      }, 
-                                                      child: Text(
-                                                        'Delete',
-                                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.red, fontWeight: FontWeight.bold)
-                                                      )
-                                                    ),
+                                                        onPressed: () async {
+                                                          final error =
+                                                              await adminDBManager
+                                                                  .deleteUser(
+                                                            id: student['id'],
+                                                            email: student[
+                                                                    'email']
+                                                                .toString(),
+                                                            isStudent: true,
+                                                          );
+                                                          if (error != null &&
+                                                              mounted) {
+                                                            ScaffoldMessenger
+                                                                    .of(context)
+                                                                .showSnackBar(
+                                                              SnackBar(
+                                                                  content: Text(
+                                                                      'Error $error'),
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .red),
+                                                            );
+                                                          } else {
+                                                            setState(() {
+                                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                                SnackBar(
+                                                                    content: Text('Successfully deleted student!'),
+                                                                    backgroundColor: Theme.of(context).colorScheme.primary
+                                                                  ),
+                                                              );
+                                                            });
+                                                          }
+                                                          Navigator.of(context)
+                                                              .pop();
+                                                        },
+                                                        child: Text(
+                                                          'Delete',
+                                                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                                  color: Colors.red,
+                                                                  fontWeight: FontWeight.bold
+                                                          ),
+                                                        )
+                                                      ),
                                                   ],
                                                 )
                                               ],
@@ -211,24 +294,25 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                           ),
                                         ),
                                       );
-                                    }
-                                  );
-                                }, 
-                                icon: const Icon(Icons.delete, color: Colors.red,)
-                              )
-                            ),
-                            DataCell(Text(student['student_no'] ?? '')),
-                            DataCell(Text(student['first_name'] ?? '')),
-                            DataCell(Text(student['middle_name'] ?? '')),
-                            DataCell(Text(student['last_name'] ?? '')),
-                            DataCell(Text(student['year_level'].toString() ?? '0')),
-                            DataCell(Text(student['course'] ?? '')),
-                            DataCell(Text(student['is_regular'])),
-                            DataCell(Text(student['email'] ?? '')),
-                            DataCell(Text(student['sex'] ?? '')),
-                          ]
-                        );
+                                    });
+                              },
+                              icon: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ))),
+                          DataCell(Text(student['student_no'] ?? '')),
+                          DataCell(Text(student['first_name'] ?? '')),
+                          DataCell(Text(student['middle_name'] ?? '')),
+                          DataCell(Text(student['last_name'] ?? '')),
+                          DataCell(Text(
+                              student['year_level'].toString() ?? '0')),
+                          DataCell(Text(student['course'] ?? '')),
+                          DataCell(Text(student['is_regular'])),
+                          DataCell(Text(student['email'] ?? '')),
+                          DataCell(Text(student['sex'] ?? '')),
+                        ]);
                       }).toList();
+
                       return SizedBox(
                         height: screenHeight - 102,
                         width: screenWidth,
@@ -243,8 +327,10 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                 sortAscending: sort,
                                 sortColumnIndex: sortIndex,
                                 columnSpacing: 30,
-                                dataTextStyle: Theme.of(context).textTheme.bodySmall,
-                                headingRowColor: WidgetStatePropertyAll(Theme.of(context).colorScheme.secondary),
+                                dataTextStyle:
+                                    Theme.of(context).textTheme.bodySmall,
+                                headingRowColor: WidgetStatePropertyAll(
+                                    Theme.of(context).colorScheme.secondary),
                                 columns: [
                                   const DataColumn(label: Text('')),
                                   const DataColumn(label: Text('')),
@@ -258,27 +344,35 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                     label: Text('Middle Name'),
                                   ),
                                   DataColumn(
-                                    label: const Text('Last Name'),
-                                    onSort: (columnIndex, ascending) {
-                                      setState(() {
-                                        sort = !sort;
-                                        sortIndex = columnIndex;
-
-                                        studentList.sort((a,b) => sort ? a['last_name'].compareTo(b['last_name']) : b['last_name'].compareTo(a['last_name']));
-                                      });
-                                    }
-                                  ),
+                                      label: const Text('Last Name'),
+                                      onSort: (columnIndex, ascending) {
+                                        setState(() {
+                                          sort = !sort;
+                                          sortIndex = columnIndex;
+                                          filteredStudents.sort((a, b) => sort
+                                              ? a['last_name']
+                                                  .toString()
+                                                  .compareTo(
+                                                      b['last_name'].toString())
+                                              : b['last_name']
+                                                  .toString()
+                                                  .compareTo(
+                                                      a['last_name'].toString()));
+                                        });
+                                      }),
                                   DataColumn(
-                                    label: Text('Year'),
-                                    onSort: (columnIndex, ascending) {
-                                      setState(() {
-                                        sort = !sort;
-                                        sortIndex = columnIndex;
-
-                                        studentList.sort((a,b) => sort ? a['year_level'].compareTo(b['year_level']) : b['year_level'].compareTo(a['year_level']));
-                                      });
-                                    }
-                                  ),
+                                      label: Text('Year'),
+                                      onSort: (columnIndex, ascending) {
+                                        setState(() {
+                                          sort = !sort;
+                                          sortIndex = columnIndex;
+                                          filteredStudents.sort((a, b) => sort
+                                              ? a['year_level']
+                                                  .compareTo(b['year_level'])
+                                              : b['year_level']
+                                                  .compareTo(a['year_level']));
+                                        });
+                                      }),
                                   DataColumn(
                                     label: Text('Course'),
                                   ),
@@ -291,21 +385,19 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                   DataColumn(
                                     label: Text('Sex'),
                                   ),
-                                ], 
-                                rows: studentData
+                                ],
+                                rows: studentData,
                               ),
                             ),
                           ),
                         ),
                       );
-                    }
-                  );
-                }
-              ),
+                    });
+              }),
             )
           ],
         ),
-      )
+      ),
     );
   }
 }

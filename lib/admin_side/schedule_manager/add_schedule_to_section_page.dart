@@ -25,7 +25,8 @@ class ScheduleEntry {
 
 class AddScheduleToSection extends StatefulWidget {
   final Map<String, dynamic> section;
-  const AddScheduleToSection({super.key, required this.section});
+  final int semNo;
+  const AddScheduleToSection({super.key, required this.section, required this.semNo});
 
   @override
   State<AddScheduleToSection> createState() => _AddScheduleToSectionState();
@@ -49,8 +50,8 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
     try {
       final parts = timeStr.split(' ');
       if (parts.length != 2) return 0;
-      final timePart = parts[0]; // e.g., "8:00"
-      final period = parts[1]; // "AM" or "PM"
+      final timePart = parts[0]; 
+      final period = parts[1];
       final timeParts = timePart.split(':');
       int hour = int.parse(timeParts[0]);
       int minute = int.parse(timeParts[1]);
@@ -110,9 +111,10 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    adminDBManager.getCurriculum(
+    adminDBManager.getCurriculumBySem(
       courseId: widget.section['course']['id'] as int, 
       yearLevel: widget.section['year_level'] as int,
+      semNo: widget.semNo
     ).then((data) {
       setState(() {
         _curriculumList = data;
@@ -136,8 +138,6 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-
-    final curriculumBySem = groupBy(_curriculumList, (s) => s['semester_no']);
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -163,17 +163,26 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
               )
             ],
           ),
+          Text("Semester ${widget.semNo}"),
           Expanded(
             child: ListView.builder(
-              itemCount: curriculumBySem.keys.length,
+              itemCount: _curriculumList.length,
               itemBuilder: (context, index) {
-                final semKey = curriculumBySem.keys.elementAt(index);
-                final subjects = curriculumBySem[semKey];
+                final subj = _curriculumList[index] as Map<String, dynamic>;
                 
-                final visibleSubjects = subjects!.where((subj) => !_removedSubjectIds.contains(subj['id'])).toList();
-                final rows = visibleSubjects.map((subj) {
-                  final scheduleEntry = _scheduleEntries.putIfAbsent(subj['id'], () => ScheduleEntry());
-                  bool hasConflict = _hasConflict(subj['id'], visibleSubjects);
+                if (_removedSubjectIds.contains(subj['id'])) {
+                  return Container(); // or SizedBox.shrink() to remove it from view
+                }
+                
+                // You can build your schedule entry row directly:
+                final scheduleEntry = _scheduleEntries.putIfAbsent(subj['id'], () => ScheduleEntry());
+                // If you need to check conflicts, build a visible subjects list:
+                final visibleSubjects = _curriculumList
+                    .where((s) => !_removedSubjectIds.contains(s['id']))
+                    .toList()
+                    .cast<Map<String, dynamic>>();
+                bool hasConflict = _hasConflict(subj['id'], visibleSubjects);
+                
                   return SizedBox(
                     height: 100,
                     child: Card(
@@ -240,7 +249,7 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
         
                                     final cyclesList = snapshot.data as List<Map<String, dynamic>>;
                                     final cyclesBySem = groupBy(cyclesList, (cycle) => cycle['semester']['number']);
-                                    final cyclesForSem = cyclesBySem[semKey] ?? [];
+                                    final cyclesForSem = cyclesBySem[widget.semNo] ?? [];
                                     final cyclesDropdown = cyclesForSem.map((cycle) {
                                       return DropdownMenuItem(
                                         value: cycle['id'],
@@ -366,56 +375,39 @@ class _AddScheduleToSectionState extends State<AddScheduleToSection> {
                       ),
                     ),
                   );
-                }).toList();
-        
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Semester $semKey"),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(maxHeight: rows.length * 100),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: rows.length, 
-                        itemBuilder: (context, index) => rows[index]
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        final selectedSubject = await showDialog(
-                          context: context, 
-                          builder: (context) {
-                            return AddSubjectToSchedDialog(courseId: widget.section['course']['id'],);
-                          }
-                        );
-                        logger.d(selectedSubject);
-                          if (selectedSubject != null) {
-                          setState(() {
-                            _curriculumList.add(selectedSubject);
-                            _scheduleEntries.putIfAbsent(selectedSubject['id'], () => ScheduleEntry());
-                          });
-                          setState(() {});
-                        }
-                      }, 
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.add),
-                          const SizedBox(width: 10,),
-                          Text(
-                            'ADD SUBJECT', 
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.bold
-                            ),
-                          )
-                        ],
-                      )
-                    ),
-                  ],
-                );
               }
+            )
+          ),
+          TextButton(
+            onPressed: () async {
+              final selectedSubject = await showDialog(
+                context: context, 
+                builder: (context) {
+                  return AddSubjectToSchedDialog(courseId: widget.section['course']['id'],);
+                }
+              );
+              logger.d(selectedSubject);
+                if (selectedSubject != null) {
+                setState(() {
+                  _curriculumList.add(selectedSubject);
+                  _scheduleEntries.putIfAbsent(selectedSubject['id'], () => ScheduleEntry());
+                });
+                setState(() {});
+              }
+            }, 
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.add),
+                const SizedBox(width: 10,),
+                Text(
+                  'ADD SUBJECT', 
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold
+                  ),
+                )
+              ],
             )
           ),
         ],

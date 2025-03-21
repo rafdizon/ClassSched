@@ -20,7 +20,7 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
   bool sort = false;
   int sortIndex = 0;
   Stream<List<Map<String, dynamic>>>? streamInstructors;
-  
+  String _searchQuery = '';
   @override
   void initState() {
     // TODO: implement initState
@@ -65,6 +65,11 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
                       suffixIcon: Icon(Icons.search),
                       hintText: 'Search',
                     ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
                   ),
                 ),
               ],
@@ -127,7 +132,15 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
 
                       logger.d(snapshot.data);
                       final instructorList = snapshot.data! as List<Map<String, dynamic>>;
-                      final instructorData = instructorList.map<DataRow>((instructor){
+                      final filteredInstructor = instructorList.where((instructor) {
+                        if(_searchQuery.isEmpty) return true;
+                        final query = _searchQuery.toLowerCase();
+
+                        return(instructor['first_name']?.toString().toLowerCase().contains(query) ?? false) 
+                        || (instructor['last_name']?.toString().toLowerCase().contains(query) ?? false) 
+                        || (instructor['email']?.toString().toLowerCase().contains(query) ?? false);
+                      }).toList();
+                      final instructorData = filteredInstructor.map<DataRow>((instructor){
                         return DataRow(
                           cells: [
                             DataCell(

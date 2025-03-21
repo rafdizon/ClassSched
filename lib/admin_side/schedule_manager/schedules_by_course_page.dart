@@ -3,6 +3,9 @@ import 'package:class_sched/admin_side/schedule_manager/schedule_manager_gate.da
 import 'package:class_sched/admin_side/schedule_manager/add_schedule_to_section_page.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:collection/collection.dart';
+import 'package:logger/logger.dart';
+
 
 class SchedulesByCoursePage extends StatefulWidget {
   final Map<String, dynamic> course;
@@ -13,6 +16,7 @@ class SchedulesByCoursePage extends StatefulWidget {
 }
 
 class _SchedulesByCoursePageState extends State<SchedulesByCoursePage> {
+  final logger = Logger();
   final adminDBManager = AdminDBManager();
   @override
   Widget build(BuildContext context) {
@@ -57,9 +61,63 @@ class _SchedulesByCoursePageState extends State<SchedulesByCoursePage> {
                       trailing: const Icon(Icons.arrow_forward_ios_rounded),
                       iconColor: Theme.of(context).colorScheme.primary,
                       onTap: () {
-                        Navigator.push(
-                          context, 
-                          MaterialPageRoute(builder: (context) => BaseLayout(body: ScheduleManagerGate(section: section)))
+                        showDialog(
+                          context: context, 
+                          builder: (context) {
+                            return FutureBuilder(
+                              future: adminDBManager.getCurriculum(
+                                courseId: section['course']['id'] as int,
+                                yearLevel: section['year_level'] as int,
+                              ), 
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return Center(child: CircularProgressIndicator());
+                                }
+                                if (snapshot.hasError) {
+                                  return AlertDialog(
+                                    title: Text('Error'),
+                                    content: Text(snapshot.error.toString()),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: Text('Close'),
+                                      ),
+                                    ],
+                                  );
+                                }
+                                final curriculumList = snapshot.data as List<dynamic>? ?? [];
+                                if (curriculumList.isEmpty) {
+                                  return AlertDialog(
+                                    title: Text('Choose a semester:'),
+                                    content: Text('No curriculum available for this selection.'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: Text('Close'),
+                                      ),
+                                    ],
+                                  );
+                                }
+                                final curriculumBySem = groupBy(curriculumList, (s) => s['semester_no']);
+                                final semesterButtons = curriculumBySem.keys.map((semester) {
+                                  return TextButton(
+                                    onPressed: () {
+                                      logger.d('Semester: $semester');
+                                      Navigator.push(
+                                        context, 
+                                        MaterialPageRoute(builder: (context) => BaseLayout(body: ScheduleManagerGate(section: section, semNo: semester as int,)))
+                                      );
+                                    },
+                                    child: Text("Semester ${semester}"),
+                                  );
+                                }).toList();
+                                return AlertDialog(
+                                  title: Text('Choose a semester:', style: Theme.of(context).textTheme.bodyMedium),
+                                  actions: semesterButtons,
+                                );
+                              }
+                            );
+                          }
                         );
                       },
                     ),

@@ -25,12 +25,11 @@ class AdminDBManager {
     }) async {
       try {
         await authService.signUpWithEmailAndPassword(email, pw);
-        logger.d('Year and course_id: ${year} and ${courseID}'); 
         final sectionIDResp = await database.from('section').select('id').eq('year_level', year).eq('course_id', courseID).single();
         final sectionID = sectionIDResp['id'];
         
         if(sectionID != null) {
-          await database.from('student')
+          final studentInsertResponse = await database.from('student')
           .insert({
             'first_name' : fName,
             'middle_name' : mName,
@@ -40,7 +39,22 @@ class AdminDBManager {
             'sex' : sex,
             'is_regular' : isRegular,
             'section_id' : sectionID,
-          });
+          }).select().single();
+
+          final newStudentId = studentInsertResponse['id'];
+
+          if(isRegular) {
+            final schedResponse = await database.from('schedule_time').select('id').eq('section_id', sectionID);
+
+            if(schedResponse.isNotEmpty) {
+              for(var sched in schedResponse) {
+                await database.from('student_schedule').insert({
+                  'student_id' : newStudentId,
+                  'schedule_time_id' : sched['id']
+                });
+              }
+            }
+          }
         }
         return null;
       } on Exception catch (e) {
@@ -128,7 +142,7 @@ class AdminDBManager {
     required List<String> days
   }) async {
     try {
-      await database.from('schedule_time')
+      final schedResponse = await database.from('schedule_time')
       .insert({
         'start_time' : startTime,
         'end_time' : endTime,
@@ -137,12 +151,26 @@ class AdminDBManager {
         'section_id' : sectionId,
         'instructor_id' : instructorId,
         'days' : days
-      });
+      }).select().single();
+
+      final schedTimeId = schedResponse['id'];
+
+      final studentResponse = await database
+        .from('student')
+        .select('id')
+        .eq('section_id', sectionId)
+        .eq('is_regular', true);
+
+      for ( var student in studentResponse) {
+        await database.from('student_schedule').insert({
+          'student_id' : student['id'],
+          'schedule_time_id' : schedTimeId
+        });
+      }
       return null;
     } on Exception catch(e) {
       return e.toString();
     }
-    
   }
   // read
   
@@ -206,6 +234,18 @@ class AdminDBManager {
       .eq('course_id', courseId)
       .eq('year_level', yearLevel).order('semester_no', ascending: true);
     }
+    return curriculum;
+  }
+
+  Future getCurriculumBySem({required int courseId, required int semNo, int yearLevel = 0}) async {
+
+    final curriculum = await database.from('curriculum')
+      .select('id, subject(id, name, code, units, is_general_subject), year_level, semester_no')
+      .eq('course_id', courseId)
+      .eq('year_level', yearLevel)
+      .eq('semester_no', semNo)
+      .order('semester_no', ascending: true);
+
     return curriculum;
   }
 

@@ -1,3 +1,4 @@
+import 'package:class_sched/client_side/student_notification_page.dart';
 import 'package:class_sched/client_side/student_profile_page.dart';
 import 'package:class_sched/client_side/student_schedule_page.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,8 @@ class _DefaultLayoutState extends State<DefaultLayout> {
 
   final List<Widget> _pages = const [
     StudentProfilePage(),
-    StudentSchedulePage()
+    StudentSchedulePage(),
+    StudentNotificationPage()
   ];
   void _onItemTapped(int index) {
     setState(() {
@@ -25,7 +27,8 @@ class _DefaultLayoutState extends State<DefaultLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(20),
+        centerTitle: true,
+        backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(150),
         bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: Theme.of(context).colorScheme.primary, height: 0.5,)),
         title: GestureDetector(
           onTap: () {},
@@ -35,6 +38,19 @@ class _DefaultLayoutState extends State<DefaultLayout> {
             fit: BoxFit.fitWidth,
           ),
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.settings, color: Colors.white,),
+          onPressed: (){},
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: const Icon(Icons.report_problem_outlined, color: Colors.white,),
+              onPressed: (){},
+            ),
+          )
+        ],
       ),
       body: IndexedStack(
         index: _selectedTab,
@@ -49,8 +65,13 @@ class _DefaultLayoutState extends State<DefaultLayout> {
             label: 'Profile',
           ),
           BottomNavigationBarItem(
-            icon: Icon(_selectedTab == 1 ? Icons.calendar_month : Icons.calendar_month_outlined)
-          )
+            icon: Icon(_selectedTab == 1 ? Icons.calendar_month : Icons.calendar_month_outlined),
+            label: 'Schedules'
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(_selectedTab == 2 ? Icons.notifications_rounded : Icons.notifications_none),
+            label: 'Notifications'
+          ),
         ]
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:class_sched/admin_side/base_layout.dart';
 import 'package:class_sched/admin_side/dashboard_page.dart';
+import 'package:class_sched/client_side/default_layout.dart';
 import 'package:class_sched/client_side/student_profile_page.dart';
 import 'package:class_sched/log_in_page.dart';
 import 'package:flutter/material.dart';
@@ -29,7 +30,7 @@ class AuthGate extends StatelessWidget {
             return const BaseLayout(body: DashboardPage(),);
           }
           else {
-            return const StudentProfilePage();
+            return const DefaultLayout();
           }
         }
         else {

@@ -8,7 +8,8 @@ import 'package:logger/logger.dart';
 final logger = Logger();
 class ScheduleManagerGate extends StatefulWidget {
   final Map<String, dynamic> section;
-  const ScheduleManagerGate({super.key, required this.section});
+  final int semNo;
+  const ScheduleManagerGate({super.key, required this.section, required this.semNo});
 
   @override
   State<ScheduleManagerGate> createState() => _ScheduleManagerGateState();
@@ -28,7 +29,7 @@ class _ScheduleManagerGateState extends State<ScheduleManagerGate> {
 
         logger.d(result);
         if(result.isNotEmpty) {
-          return ViewScheduleBySectionPage(schedule: result);
+          return ViewScheduleBySectionPage(schedule: result, semNo: widget.semNo);
         }
         else {
           SchedulerBinding.instance.addPostFrameCallback((_) {
@@ -39,7 +40,7 @@ class _ScheduleManagerGateState extends State<ScheduleManagerGate> {
             ),
           );
         });
-          return AddScheduleToSection(section: widget.section);
+          return AddScheduleToSection(section: widget.section, semNo: widget.semNo,);
         }
       }
     );
