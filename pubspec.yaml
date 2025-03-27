@@ -40,6 +40,13 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   supabase_flutter: ^2.8.3
+  flutter_local_notifications: ^19.0.0
+  timezone: ^0.10.0
+  flutter_timezone: ^4.1.0
+  shared_preferences: ^2.5.2
+  badges: ^3.1.2
+  flutter_launcher_icons: ^0.14.3
+  window_manager: ^0.4.3
 
 dev_dependencies:
   flutter_test:
@@ -51,6 +58,15 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
+
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/images/logo2.png"
+  adaptive_icon_background: "#ffffff"
+  windows:
+    generate: true
+    image_path: "assets/images/logo2.png"
+    icon_size: 48
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -96,3 +112,13 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+msix_config:
+  display_name: "Class Sched"
+  publisher_display_name: "Class Sched"
+  identity_name: "com.classsched.classsched"
+  publisher: "CN=YourCertificate"
+  msix_version: 1.0.0.0
+  capabilities: "internetClient"
+  install_cert: true
+  dependencies:
+    - Microsoft.VCLibs.x64.14.00.Desktop.app

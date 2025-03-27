@@ -1,3 +1,4 @@
+import 'package:class_sched/admin_side/school_setup_navigation/dates_tabs/edit_cycle_dialog.dart';
 import 'package:class_sched/ui_elements/add_cycle_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
@@ -85,12 +86,29 @@ class _BySemTabsState extends State<BySemTabs> {
                         icon: const Icon(Icons.delete, color: Colors.red,)
                       ),
                       IconButton(
-                        onPressed: () {
-                          showDialog(
+                        onPressed: () async {
+                          final result = await showDialog(
                             context: context, 
                             barrierDismissible: false,
-                            builder: (context) => const Placeholder()
+                            builder: (context) => EditCycleDialog(cycleData: cycles, semId: widget.semId)
                           );
+                          if (result == true) {
+                            setState(() {
+                              streamCycles = adminDBManager.database
+                                .from('cycle')
+                                .stream(primaryKey: ['id'])
+                                .eq('semester_id', widget.semId)
+                                .order('cycle_no', ascending: true)
+                                .map((cycles) => cycles.map((cycle) {
+                                      return {
+                                        'id': cycle['id'],
+                                        'cycle_no': cycle['cycle_no'],
+                                        'start_date': cycle['start_date'],
+                                        'end_date': cycle['end_date'],
+                                      };
+                                    }).toList());
+                            });
+                          }
                         }, 
                         icon: Icon(Icons.edit, color: Theme.of(context).colorScheme.primary,)
                       ),

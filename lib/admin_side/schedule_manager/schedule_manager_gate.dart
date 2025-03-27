@@ -20,29 +20,31 @@ class _ScheduleManagerGateState extends State<ScheduleManagerGate> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-      future: adminDBManager.getSchedulesForSection(sectionId: widget.section['id']), 
+      future: adminDBManager.getSchedulesForSection(
+          sectionId: widget.section['id'], semNo: widget.semNo),
       builder: (context, snapshot) {
-        if(snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(),);
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
         }
         final result = snapshot.data as List<Map<String, dynamic>>;
 
+        final validSchedules = result.where((sched) => sched['cycle']['semester'] != null).toList();
+
         logger.d(result);
-        if(result.isNotEmpty) {
-          return ViewScheduleBySectionPage(schedule: result, semNo: widget.semNo);
-        }
-        else {
+        if (validSchedules.isNotEmpty) {
+          return ViewScheduleBySectionPage(schedule: validSchedules, semNo: widget.semNo);
+        } else {
           SchedulerBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('No schedule yet, create schedule here'),
-              backgroundColor: Theme.of(context).colorScheme.primary,
-            ),
-          );
-        });
-          return AddScheduleToSection(section: widget.section, semNo: widget.semNo,);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('No schedule yet, create schedule here'),
+                backgroundColor: Theme.of(context).colorScheme.primary,
+              ),
+            );
+          });
+          return AddScheduleToSection(section: widget.section, semNo: widget.semNo);
         }
-      }
+      },
     );
   }
 }

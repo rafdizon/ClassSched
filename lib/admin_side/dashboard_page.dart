@@ -41,23 +41,22 @@ class _DashboardPageState extends State<DashboardPage> {
                       child: Card(
                         elevation: 5,
                         child: FutureBuilder(
-                          future: adminDBManager.database.from('academic_year').select().eq('is_active', true), 
+                          future: adminDBManager.database.from('report').count().eq('is_opened', false), 
                           builder: (context, snapshot) {
                             if(snapshot.connectionState == ConnectionState.waiting) {
                               return const Center(child: CircularProgressIndicator(),);
                             } else if(snapshot.hasError) {
                               return Text(snapshot.error.toString());
                             }
-                      
-                            final acadYearList = snapshot.data;
-                            final acadYear = acadYearList?.firstOrNull?['academic_year'];
+                            final notifCount = snapshot.data as int;
                 
                             return Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               spacing: 20,
                               children: [
-                                Icon(Icons.calendar_month),
-                                Text(acadYear, style: Theme.of(context).textTheme.bodyMedium,),
+                                Icon(Icons.notifications),
+                                Text(notifCount.toString(), style: Theme.of(context).textTheme.bodyMedium,),
+                                Text('Unread Notifications', style: Theme.of(context).textTheme.bodySmall,),
                               ],
                             );
                           }

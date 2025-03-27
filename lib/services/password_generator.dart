@@ -5,16 +5,28 @@ String generatePassword() {
   const lowerCase = "abcdefghijklmnopqrstuvwxyz";
   const nums = "0123456789";
   const symbols = "@!-_=+-/*.,:;[]{}()&^%#`~";
-
-  String pw = '';
-
+  
   final rand = Random();
-
+  
+  String password = '';
+  password += upperCase[rand.nextInt(upperCase.length)];
+  print(password);
+  password += lowerCase[rand.nextInt(lowerCase.length)];
+  print(password);
+  password += nums[rand.nextInt(nums.length)];
+  print(password);
+  password += symbols[rand.nextInt(symbols.length)];
+  print(password);
+  
   const allChars = upperCase + lowerCase + nums + symbols;
-
-  for(int i = 0; i < 10; i++) {
-    pw += allChars[rand.nextInt(allChars.length)]; 
+  
+  int remainingLength = 10 - 4;
+  for (int i = 0; i < remainingLength; i++) {
+    password += allChars[rand.nextInt(allChars.length)];
   }
-
-  return String.fromCharCodes(pw.runes.toList()..shuffle(rand));
+  print(password);
+  List<int> runes = password.runes.toList();
+  runes.shuffle(rand);
+  print(runes);
+  return String.fromCharCodes(runes);
 }

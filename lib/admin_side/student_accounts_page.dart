@@ -2,13 +2,15 @@ import 'package:class_sched/admin_side/base_layout.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:class_sched/ui_elements/add_student_dialog.dart';
 import 'package:class_sched/ui_elements/edit_student_dialog.dart';
+import 'package:class_sched/ui_elements/student_details_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
 var logger = Logger();
 
 class StudentAccountsPage extends StatefulWidget {
-  const StudentAccountsPage({super.key});
+  final String? studentId;
+  const StudentAccountsPage({Key? key, this.studentId}) : super(key: key);
 
   @override
   State<StudentAccountsPage> createState() => _StudentAccountsPageState();
@@ -20,7 +22,9 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
   bool sort = false;
   int sortIndex = 0;
   Stream<List<Map<String, dynamic>>>? streamStudents;
-  String _searchQuery = '';
+  final _searchController = TextEditingController();
+  late String _searchQuery;
+  List<Map<String, dynamic>>? _sortedStudents;
 
   void initStreamStudents() async {
     final sectionMap = await adminDBManager.fetchSectionData();
@@ -39,6 +43,7 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                   'last_name': student['last_name'],
                   'year_level': section?['year_level'] as int? ?? 0,
                   'course': section?['course']?['name'] ?? '',
+                  'major': section?['course']?['major'] ?? '',
                   'course_id': section?['course']?['id'] ?? 0,
                   'is_regular': student['is_regular'] ? 'Regular' : 'Irregular',
                   'email': student['email'],
@@ -51,6 +56,8 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
   @override
   void initState() {
     super.initState();
+    _searchQuery = widget.studentId != null ? widget.studentId! : '';
+    _searchController.text =_searchQuery;
     initStreamStudents();
   }
 
@@ -73,6 +80,7 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                   width: 300,
                   height: 40,
                   child: TextField(
+                    controller: _searchController,
                     style: Theme.of(context).textTheme.bodySmall,
                     decoration: const InputDecoration(
                       suffixIcon: Icon(Icons.search),
@@ -187,9 +195,23 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                 false);
                       }).toList();
 
+                      if (_sortedStudents == null || _searchQuery.isNotEmpty) {
+                        _sortedStudents = List.from(filteredStudents);
+                      }
+
                       final studentData =
-                          filteredStudents.map<DataRow>((student) {
-                        return DataRow(cells: [
+                          _sortedStudents!.map<DataRow>((student) {
+                        return DataRow(
+                          onSelectChanged: (selected) {
+                            Logger().i(student);
+                            if(selected ?? false) {
+                              showDialog(
+                                context: context, 
+                                builder: (context) => StudentDetailsDialog(studentMap: student)
+                              );
+                            }
+                          },
+                          cells: [
                           DataCell(IconButton(
                               onPressed: () {
                                 showDialog(
@@ -304,9 +326,9 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                           DataCell(Text(student['first_name'] ?? '')),
                           DataCell(Text(student['middle_name'] ?? '')),
                           DataCell(Text(student['last_name'] ?? '')),
-                          DataCell(Text(
-                              student['year_level'].toString() ?? '0')),
+                          DataCell(Text(student['year_level'].toString() ?? '0')),
                           DataCell(Text(student['course'] ?? '')),
+                          DataCell(Text(student['major'] ?? '')),
                           DataCell(Text(student['is_regular'])),
                           DataCell(Text(student['email'] ?? '')),
                           DataCell(Text(student['sex'] ?? '')),
@@ -324,6 +346,7 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                               controller: scrollController,
                               scrollDirection: Axis.horizontal,
                               child: DataTable(
+                                showCheckboxColumn: false,
                                 sortAscending: sort,
                                 sortColumnIndex: sortIndex,
                                 columnSpacing: 30,
@@ -349,7 +372,7 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                         setState(() {
                                           sort = !sort;
                                           sortIndex = columnIndex;
-                                          filteredStudents.sort((a, b) => sort
+                                          _sortedStudents?.sort((a, b) => sort
                                               ? a['last_name']
                                                   .toString()
                                                   .compareTo(
@@ -366,7 +389,7 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                         setState(() {
                                           sort = !sort;
                                           sortIndex = columnIndex;
-                                          filteredStudents.sort((a, b) => sort
+                                          _sortedStudents?.sort((a, b) => sort
                                               ? a['year_level']
                                                   .compareTo(b['year_level'])
                                               : b['year_level']
@@ -375,9 +398,30 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                       }),
                                   DataColumn(
                                     label: Text('Course'),
+                                    onSort: (columnIndex, ascending) {
+                                      setState(() {
+                                        sort = ascending;
+                                        sortIndex = columnIndex;
+                                        _sortedStudents?.sort((a, b) => ascending
+                                            ? (a['course'] as String).compareTo(b['course'] as String)
+                                            : (b['course'] as String).compareTo(a['course'] as String));
+                                      });
+                                    },
+                                  ),
+                                  DataColumn(
+                                    label: Text('Major'),
                                   ),
                                   DataColumn(
                                     label: Text('Status'),
+                                    onSort: (columnIndex, ascending) {
+                                      setState(() {
+                                        sort = ascending;
+                                        sortIndex = columnIndex;
+                                        _sortedStudents?.sort((a, b) => ascending
+                                            ? (a['is_regular'] as String).compareTo(b['is_regular'] as String)
+                                            : (b['is_regular'] as String).compareTo(a['is_regular'] as String));
+                                      });
+                                    },
                                   ),
                                   DataColumn(
                                     label: Text('E-mail Address'),

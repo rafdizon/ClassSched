@@ -94,7 +94,46 @@ class _CurrentDatesTabState extends State<CurrentDatesTab> with SingleTickerProv
                       children: [
                         Text(semList[2]['academic_year'], style: Theme.of(context).textTheme.bodyLarge,),
                         TextButton(
-                          onPressed: (){}, 
+                          onPressed: () => null, 
+                          onLongPress: () {
+                            showDialog<bool>(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: const Text('Confirmation'),
+                                  content: Text(
+                                    'Are you sure you want to move to academic year to history?\nYou will reset schedules, semesters, and cycles.\nTHIS IS IRREVERSIBLE!',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Colors.red[900]
+                                    )
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(true),
+                                      child: const Text('Yes'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ).then((confirmed) async {
+                              if (confirmed == true) {
+                                final result = await AdminDBManager().moveAYtoHistory();
+                                if (result == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('NEW ACADEMIC YEAR LOADED'),
+                                      backgroundColor: Theme.of(context).colorScheme.primary,
+                                    ),
+                                  );
+                                  Navigator.pop(context);
+                                }
+                              }
+                            });
+                          },
                           child: const Text('Move to History', style: TextStyle(color: Colors.red,))
                         )
                       ],

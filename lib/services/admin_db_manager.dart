@@ -2,6 +2,7 @@ import 'package:class_sched/services/auth_service.dart';
 import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 var logger = Logger();
 class AdminDBManager {
@@ -49,6 +50,18 @@ class AdminDBManager {
             if(schedResponse.isNotEmpty) {
               for(var sched in schedResponse) {
                 await database.from('student_schedule').insert({
+                  'student_id' : newStudentId,
+                  'schedule_time_id' : sched['id']
+                });
+              }
+            }
+          }
+          else {
+            final schedResponse = await database.from('schedule_time').select('id').eq('section_id', sectionID);
+
+            if(schedResponse.isNotEmpty) {
+              for(var sched in schedResponse) {
+                await database.from('student_schedule_irregular').insert({
                   'student_id' : newStudentId,
                   'schedule_time_id' : sched['id']
                 });
@@ -161,9 +174,33 @@ class AdminDBManager {
         .eq('section_id', sectionId)
         .eq('is_regular', true);
 
+      final irregStudentResponse = await database
+        .from('student')
+        .select('id')
+        .eq('section_id', sectionId)
+        .eq('is_regular', false);
+
+      final instructorResponse = await database
+        .from('instructor')
+        .select('id')
+        .eq('id', instructorId);
+
       for ( var student in studentResponse) {
         await database.from('student_schedule').insert({
           'student_id' : student['id'],
+          'schedule_time_id' : schedTimeId
+        });
+      }
+
+      for ( var student in irregStudentResponse) {
+        await database.from('student_schedule_irregular').insert({
+          'student_id' : student['id'],
+          'schedule_time_id' : schedTimeId
+        });
+      }
+      for ( var instructor in instructorResponse) {
+        await database.from('instructor_schedule').insert({
+          'instructor_id' : instructor['id'],
           'schedule_time_id' : schedTimeId
         });
       }
@@ -177,7 +214,7 @@ class AdminDBManager {
   Future<Map<int, dynamic>> fetchSectionData() async {
     final sectionData = await Supabase.instance.client
         .from('section')
-        .select('id, year_level, course(id, name)');
+        .select('id, year_level, course(id, name, major)');
 
     return { for (var s in sectionData) s['id']: s };
   }
@@ -258,12 +295,41 @@ class AdminDBManager {
     return cycles;
   }
 
-  Future getSchedulesForSection({required int sectionId}) async {
+  Future getSchedulesForSection({required int sectionId, required int semNo}) async {
     final sched = await database.from('schedule_time')
-    .select('id, start_time, end_time, curriculum(id, year_level, semester_no, subject(id, name, code, units, is_general_subject), course(id, name, major, short_form)), cycle(id, cycle_no, start_date, end_date, semester(id, number, start_date, end_date, academic_year)), instructor(id, first_name, middle_name, last_name, is_full_time, sex, email), section(id, year_level)')
+    .select('id, start_time, end_time, days, curriculum(id, year_level, semester_no, subject(id, name, code, units, is_general_subject), course(id, name, major, short_form)), cycle(id, cycle_no, start_date, end_date, semester(id, number, start_date, end_date, academic_year, academic_year(id, is_active, academic_year))), instructor(id, first_name, middle_name, last_name, is_full_time, sex, email), section(id, year_level)')
+    .eq('cycle.semester.number', semNo)
+    .eq('cycle.semester.academic_year.is_active', true)
     .eq('section_id', sectionId);
 
     return sched;
+  }
+
+  Future getSchedulesForStudent({required int studentId}) async {
+    final studentScheds = await database.from('student_schedule')
+    .select('id, student(id, student_no, first_name, middle_name, last_name, email, is_regular, section(id, year_level, course(id, name, major, short_form))), schedule_time(id, start_time, end_time, days, curriculum(id, year_level, semester_no, subject(id, name, code, units, is_general_subject), course(id, name, major, short_form)), cycle(id, cycle_no, start_date, end_date, semester(id, number, start_date, end_date, academic_year, academic_year(id, is_active, academic_year))), instructor(id, first_name, middle_name, last_name, is_full_time, sex, email), section(id, year_level))')
+    .eq('schedule_time.cycle.semester.academic_year.is_active', true)
+    .eq('student_id', studentId);
+
+    Logger().i(studentScheds);
+    return studentScheds;
+  }
+
+  Future getSchedulesForIrregStudent({required int studentId}) async {
+    final studentScheds = await database.from('student_schedule_irregular')
+    .select('id, student(id, student_no, first_name, middle_name, last_name, email, is_regular, section(id, year_level, course(id, name, major, short_form))), schedule_time(id, start_time, end_time, days, curriculum(id, year_level, semester_no, subject(id, name, code, units, is_general_subject), course(id, name, major, short_form)), cycle(id, cycle_no, start_date, end_date, semester(id, number, start_date, end_date, academic_year, academic_year(id, is_active, academic_year))), instructor(id, first_name, middle_name, last_name, is_full_time, sex, email), section(id, year_level))')
+    .eq('schedule_time.cycle.semester.academic_year.is_active', true)
+    .eq('student_id', studentId);
+
+    return studentScheds;
+  }
+
+  Future getNotifications() async {
+    final notifs = await database.from('report')
+    .select('id, header, body, is_opened, student(id, first_name, middle_name, last_name, email, student_no, is_regular), instructor(id, first_name, middle_name, last_name, email, is_full_time), created_at')
+    .order('created_at');
+
+    return notifs;
   }
   // update
   Future editStudent({
@@ -326,21 +392,67 @@ class AdminDBManager {
     }
   }
 
+  Future updateScheduleSection({
+    required int schedId,
+    required String startTime,
+    required String endTime,
+    required int cycleId,
+    required int curriculumId, 
+    required int sectionId,
+    required int instructorId,
+    required List<String> days,
+  }) async {
+    try {
+      // Update the schedule_time row based on curriculum and section identifiers.
+      final updatedResponse = await database
+        .from('schedule_time')
+        .update({
+          'start_time': startTime,
+          'end_time': endTime,
+          'cycle_id': cycleId,
+          'instructor_id': instructorId,
+          'days': days,
+        })
+        .eq('id', schedId)
+        .select()
+        .single();
+        
+      return null;
+    } on Exception catch(e) {
+      return e.toString();
+    }
+  }
+
+  Future updateCycle({required int id, required String cycleNo, required String startDate, required String endDate}) async {
+    await database.from('cycle')
+    .update({
+      'cycle_no' : cycleNo,
+      'start_date' : startDate,
+      'end_date' : endDate
+    }).eq('id', id);
+  }
+
+  Future markNotifRead({required int id}) async {
+    await database.from('report').update({'is_opened' : true}).eq('id', id);
+  }
+
   // delete
   Future deleteUser({required int id, required String email, required bool isStudent}) async {
     try {
-      final responseFromFunc = await database.functions.invoke(
-      'delete-user',
-      body: {'email': email},
-    );
-      if(isStudent) {
-        final responseFromTable = await database.from('student').delete().eq('id', id);
+      try {
+        await database.functions.invoke(
+          'delete-user',
+          body: {'email': email},
+        );
+      } catch (e) {
+        //
       }
-      else {
-        final responseFromTable = await database.from('instructor').delete().eq('id', id);
+      
+      if (isStudent) {
+        await database.from('student').delete().eq('id', id);
+      } else {
+        await database.from('instructor').delete().eq('id', id);
       }
-
-      //logger.d(responseFromFunc);
       return null;
     } on Exception catch (e) {
       return e.toString();
@@ -367,12 +479,80 @@ class AdminDBManager {
     }
   }
 
-    Future deleteSubject({required id}) async {
+  Future deleteSubject({required id}) async {
     try {
       await database.from('subject').delete().inFilter('id', id);
       return null;
     }
     on Exception catch (e) {
+      return e.toString();
+    }
+  }
+  Future deleteScheduleSection({required int id}) async {
+    try {
+      final response = await database.from('schedule_time')
+        .delete()
+        .eq('id', id);
+      return null;
+    } on Exception catch (e) {
+      return e.toString();
+    }
+  }
+
+  Future moveAYtoHistory() async {
+    try{
+      final acadYear = await database.from('academic_year').select().eq('is_active', true).single();
+      RegExp regExp = RegExp(r'(\d+)\s*to\s*(\d+)');
+      Match? match = regExp.firstMatch(acadYear['academic_year'].toString());
+      
+      if (match != null) {
+        int firstYear = int.parse(match.group(1)!);
+        int secondYear = int.parse(match.group(2)!);
+        
+        firstYear += 1;
+        secondYear += 1;
+        
+        String newYear = "$firstYear to $secondYear";
+        await database.from('academic_year').update({'is_active' : false}).eq('is_active', true);
+        await database.from('academic_year').insert({
+          'academic_year' : newYear,
+          'is_active' : true
+        });
+
+        final newAcadYear = await database.from('academic_year').select().eq('is_active', true).single();
+        DateTime now = DateTime.now();
+  
+        String formattedDate = DateFormat('yyyy-MM-dd').format(now);
+
+        await database.from('semester').insert([
+          {
+            'start_date' : formattedDate,
+            'end_date' : formattedDate,
+            'academic_year' : newAcadYear['academic_year'],
+            'academic_year_id' : newAcadYear['id'],
+            'number' : 1
+          },
+          {
+            'start_date' : formattedDate,
+            'end_date' : formattedDate,
+            'academic_year' : newAcadYear['academic_year'],
+            'academic_year_id' : newAcadYear['id'],
+            'number' : 2
+          },
+          {
+            'start_date' : formattedDate,
+            'end_date' : formattedDate,
+            'academic_year' : newAcadYear['academic_year'],
+            'academic_year_id' : newAcadYear['id'],
+            'number' : 3
+          },
+        ]);
+        return null;
+      }
+      else {
+        return 'Unsuccessful';
+      }
+    } on Exception catch (e) {
       return e.toString();
     }
   }

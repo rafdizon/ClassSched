@@ -104,10 +104,7 @@ class _SchedulesPageState extends State<SchedulesPage> with SingleTickerProvider
                         ],
                       ),
                     ),
-                    SizedBox(
-                      width: bodyWidth,
-                      child: SchedulesByCoursePage(course: courses[_selectedNavigIndex],),
-                    ),
+                    Expanded(child: SchedulesByCoursePage(course: courses[_selectedNavigIndex],)),
                   ],
                 );
               }
@@ -146,7 +143,7 @@ class _SchedulesPageState extends State<SchedulesPage> with SingleTickerProvider
                               indent: 20,
                               endIndent: 20,
                             ),
-                            Expanded(
+                            SingleChildScrollView(
                               child: NavigationRail(
                                 extended: true,
                                 backgroundColor: Colors.transparent,

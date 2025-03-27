@@ -5,6 +5,7 @@ import 'package:class_sched/client_side/student_profile_page.dart';
 import 'package:class_sched/log_in_page.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
@@ -27,6 +28,13 @@ class AuthGate extends StatelessWidget {
           final userEmail = session.user.email;
 
           if(userEmail == "classschedspusm@gmail.com") {
+            if (!Platform.isWindows) {
+              return const Scaffold(
+                body: Center(
+                  child: Text("Admin access is only allowed on Windows."),
+                ),
+              );
+            }
             return const BaseLayout(body: DashboardPage(),);
           }
           else {

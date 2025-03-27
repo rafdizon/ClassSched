@@ -124,13 +124,69 @@ class _LogInPageState extends State<LogInPage> {
                         ),
                       ),
                       const SizedBox(height: 5),
-                      Center(
-                        child: TextButton(
-                          onPressed: () {
-                          },
-                          child: const Text('Forgot Password'),
-                        ),
-                      )
+                      // Center(
+                      //   child: TextButton(
+                      //     onPressed: () {
+                      //       showDialog(
+                      //         context: context,
+                      //         builder: (context) {
+                      //           final emailResetController = TextEditingController();
+                      //           return AlertDialog(
+                      //             title: Text(
+                      //               "Reset Password",
+                      //               style: Theme.of(context).textTheme.titleLarge,
+                      //             ),
+                      //             content: TextField(
+                      //               controller: emailResetController,
+                      //               decoration: InputDecoration(
+                      //                 labelText: "SPUSM E-mail",
+                      //                 labelStyle: Theme.of(context).textTheme.labelSmall,
+                      //               ),
+                      //               style: Theme.of(context).textTheme.bodySmall,
+                      //             ),
+                      //             actions: [
+                      //               TextButton(
+                      //                 onPressed: () async {
+                      //                   try {
+                      //                     await authService.resetPassword(emailResetController.text);
+                      //                     if (mounted) {
+                      //                       Navigator.pop(context);
+                      //                       ScaffoldMessenger.of(context).showSnackBar(
+                      //                         const SnackBar(
+                      //                           content: Text("Reset email sent! Please check your inbox."),
+                      //                         ),
+                      //                       );
+                      //                     }
+                      //                   } catch (e) {
+                      //                     if (mounted) {
+                      //                       ScaffoldMessenger.of(context).showSnackBar(
+                      //                         SnackBar(content: Text("Error: $e")),
+                      //                       );
+                      //                     }
+                      //                   }
+                      //                 },
+                      //                 child: Text(
+                      //                   "Reset",
+                      //                   style: Theme.of(context).textTheme.bodySmall,
+                      //                 ),
+                      //               ),
+                      //               TextButton(
+                      //                 onPressed: () {
+                      //                   Navigator.pop(context);
+                      //                 },
+                      //                 child: Text(
+                      //                   "Cancel",
+                      //                   style: Theme.of(context).textTheme.bodySmall,
+                      //                 ),
+                      //               ),
+                      //             ],
+                      //           );
+                      //         },
+                      //       );
+                      //     },
+                      //     child: const Text('Forgot Password'),
+                      //   ),
+                      // )
                     ],
                   ),
                 ),

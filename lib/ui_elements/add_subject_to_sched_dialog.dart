@@ -37,6 +37,7 @@ class _AddSubjectToSchedDialogState extends State<AddSubjectToSchedDialog> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: (){
+                  logger.i(subj);
                   Navigator.pop(context, subj);
                 },
                 child: Card(

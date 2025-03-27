@@ -1,8 +1,10 @@
 import 'package:class_sched/admin_side/dashboard_page.dart';
 import 'package:class_sched/admin_side/notification_page.dart';
 import 'package:class_sched/auth_gate.dart';
+import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:class_sched/services/auth_service.dart';
+import 'package:badges/badges.dart' as badges;
 
 class BaseLayout extends StatefulWidget {
   final Widget body;
@@ -49,17 +51,34 @@ class _BaseLayoutState extends State<BaseLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 120,
         backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(20),
         bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Container(color: Theme.of(context).colorScheme.primary, height: 0.5,)),
         foregroundColor: Theme.of(context).colorScheme.primary,
         automaticallyImplyLeading: false,
         leading: Builder(
           builder: (context) {
-            return IconButton(
-              onPressed: () {
-                Scaffold.of(context).openDrawer();
-              }, 
-              icon: const Icon(Icons.menu)
+            return Padding(
+              padding: const EdgeInsets.only(left: 20),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.arrow_back,
+                      color: Navigator.canPop(context) ? Theme.of(context).colorScheme.primary : Colors.grey,
+                    ),
+                    onPressed: () {
+                      Navigator.canPop(context) ? Navigator.pop(context) : null;
+                    },
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Scaffold.of(context).openDrawer();
+                    }, 
+                    icon: const Icon(Icons.menu)
+                  ),
+                ],
+              ),
             );
           }
         ),
@@ -139,14 +158,43 @@ class _BaseLayoutState extends State<BaseLayout> {
               child: NavigationRail(
                 backgroundColor: Theme.of(context).colorScheme.tertiary,
                 extended: true,
-                destinations: const [
-                  NavigationRailDestination(
+                destinations: [
+                  const NavigationRailDestination(
                     icon: Icon(Icons.data_thresholding_outlined),
                     selectedIcon: Icon(Icons.data_thresholding_rounded),
                     label: Text('Dashboard')
                   ),
                   NavigationRailDestination(
-                    icon: Icon(Icons.notifications_active_outlined),
+                    icon: FutureBuilder(
+                      future: AdminDBManager().database.from('report').count().eq('is_opened', false), 
+                      builder: (context, snapshot) {
+                        if(snapshot.connectionState == ConnectionState.waiting) {
+                          return badges.Badge(
+                            badgeContent: Text(
+                              '0',
+                              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                color: Colors.white
+                              ),
+                            ),
+                            child: Icon(Icons.notifications_active_outlined),
+                            position: badges.BadgePosition.topEnd(end: -5, top: -5),
+                            showBadge: true,
+                          );
+                        }
+                        final notifCount = snapshot.data as int;
+                        return badges.Badge(
+                          badgeContent: Text(
+                            notifCount.toString(),
+                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: Colors.white
+                            ),
+                          ),
+                          child: Icon(Icons.notifications_active_outlined),
+                          position: badges.BadgePosition.topEnd(end: -5, top: -5),
+                          showBadge: true,
+                        );
+                      }
+                    ),
                     selectedIcon: Icon(Icons.notifications_active_rounded),
                     label: Text('Notifications')
                   ),
