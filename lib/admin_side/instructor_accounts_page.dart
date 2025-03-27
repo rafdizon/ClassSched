@@ -8,7 +8,8 @@ import 'package:logger/logger.dart';
 var logger = Logger();
 
 class InstructorAccountsPage extends StatefulWidget {
-  const InstructorAccountsPage({super.key});
+  final String? instEmail;
+  const InstructorAccountsPage({super.key, this.instEmail});
 
   @override
   State<InstructorAccountsPage> createState() => _InstructorAccountsPageState();
@@ -20,11 +21,14 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
   bool sort = false;
   int sortIndex = 0;
   Stream<List<Map<String, dynamic>>>? streamInstructors;
+  final _searchController = TextEditingController();
   String _searchQuery = '';
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    _searchQuery = widget.instEmail != null ? widget.instEmail! : '';
+    _searchController.text =_searchQuery;
     streamInstructors = adminDBManager.database.from('instructor').stream(primaryKey: ['id']).map(((instructors) => instructors.map((instructor)
         {
           return {
@@ -60,6 +64,7 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
                   width: 300,
                   height: 40,
                   child: TextField(
+                    controller: _searchController,
                     style: Theme.of(context).textTheme.bodySmall,
                     decoration: const InputDecoration(
                       suffixIcon: Icon(Icons.search),

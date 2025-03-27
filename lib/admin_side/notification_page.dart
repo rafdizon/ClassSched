@@ -1,5 +1,7 @@
+import 'package:class_sched/admin_side/instructor_accounts_page.dart';
 import 'package:class_sched/admin_side/student_accounts_page.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
+import 'package:class_sched/services/client_db_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -52,6 +54,7 @@ class _NotificationPageState extends State<NotificationPage> {
             
                 final notifList = snapshot.data as List<Map<String, dynamic>>;
                 final notifItems = notifList.map((notif) {
+                  bool isSenderStudent = notif['student'] != null;
                   return MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: GestureDetector(
@@ -71,11 +74,11 @@ class _NotificationPageState extends State<NotificationPage> {
                                     children: [
                                       Text(notif['header'], style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),),
                                       Text(
-                                        'Sent by: ${notif['student']['first_name']} ${notif['student']['last_name']}', 
+                                        'Sent by: ${isSenderStudent ? notif['student']['first_name'] : notif['instructor']['first_name']} ${isSenderStudent ? notif['student']['last_name'] : notif['instructor']['last_name']}', 
                                         style: Theme.of(context).textTheme.bodySmall
                                       ),
-                                      Text(notif['student']['email'], style: Theme.of(context).textTheme.bodySmall),
-                                      Text(notif['student']['student_no'], style: Theme.of(context).textTheme.bodySmall),
+                                      Text(isSenderStudent ? notif['student']['email'] : notif['instructor']['email'], style: Theme.of(context).textTheme.bodySmall),
+                                      Text(isSenderStudent ? notif['student']['student_no'] : '', style: Theme.of(context).textTheme.bodySmall),
                                       Divider(color: Theme.of(context).colorScheme.primary,),
                                       SizedBox(
                                         height: 150,
@@ -92,7 +95,18 @@ class _NotificationPageState extends State<NotificationPage> {
                                         onPressed: (){
                                           Navigator.push(
                                             context, 
-                                            MaterialPageRoute(builder: (context) => StudentAccountsPage(studentId: notif['student']['student_no'],))
+                                            MaterialPageRoute(
+                                              builder: (context) { 
+                                                if (isSenderStudent){
+                                                  return StudentAccountsPage(
+                                                  studentId: notif['student']['student_no'],
+                                                );
+                                                }
+                                                return InstructorAccountsPage(
+                                                  instEmail: notif['instructor']['email'],
+                                                );
+                                              }
+                                            )
                                           );
                                         },
                                         child: Text('View Sender', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),),
@@ -107,57 +121,65 @@ class _NotificationPageState extends State<NotificationPage> {
                         setState(() {});
                       },
                       child: Card(
-                        child: Table(
-                          columnWidths: const {
-                            0 : FractionColumnWidth(0.1),
-                            1 : FractionColumnWidth(0.25),
-                            2 : FractionColumnWidth(0.2),
-                            3 : FractionColumnWidth(0.25), 
-                            4 : FractionColumnWidth(0.2)
-                          },
-                          children: [
-                            TableRow(
-                              children: [
-                                TableCell(
-                                  child: SizedBox(width: 20,)
-                                ),
-                                TableCell(
-                                  child: Text(
-                                    notif['student']['email'], 
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontWeight: !notif['is_opened'] ? FontWeight.bold : FontWeight.normal
-                                    ),
-                                  )
-                                ),
-                                TableCell(
-                                  child: Text(
-                                    notif['header'], 
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontWeight: !notif['is_opened'] ? FontWeight.bold : FontWeight.normal
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40),
+                          child: Table(
+                            columnWidths: const {
+                              0 : FractionColumnWidth(0.1),
+                              1 : FractionColumnWidth(0.25),
+                              2 : FractionColumnWidth(0.2),
+                              3 : FractionColumnWidth(0.25), 
+                              4 : FractionColumnWidth(0.2)
+                            },
+                            children: [
+                              TableRow(
+                                children: [
+                                  TableCell(
+                                    child: Text(
+                                      isSenderStudent ? 'Student' : 'Instructor',
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontWeight: !notif['is_opened'] ? FontWeight.bold : FontWeight.normal
+                                      ),
+                                    )
+                                  ),
+                                  TableCell(
+                                    child: Text(
+                                      isSenderStudent ? notif['student']['email'] : notif['instructor']['email'], 
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontWeight: !notif['is_opened'] ? FontWeight.bold : FontWeight.normal
+                                      ),
+                                    )
+                                  ),
+                                  TableCell(
+                                    child: Text(
+                                      notif['header'], 
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontWeight: !notif['is_opened'] ? FontWeight.bold : FontWeight.normal
+                                      ),
                                     ),
                                   ),
-                                ),
-                                TableCell(
-                                  child: Text(
-                                    notif['body'], 
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontWeight: !notif['is_opened'] ? FontWeight.bold : FontWeight.normal
+                                  TableCell(
+                                    child: Text(
+                                      notif['body'], 
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontWeight: !notif['is_opened'] ? FontWeight.bold : FontWeight.normal
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                                TableCell(
-                                  child: Text(
-                                    formatCreatedAt(notif['created_at']),
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontWeight: !notif['is_opened'] ? FontWeight.bold : FontWeight.normal
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
+                                  TableCell(
+                                    child: Text(
+                                      formatCreatedAt(notif['created_at']),
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        fontWeight: !notif['is_opened'] ? FontWeight.bold : FontWeight.normal
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    )
                                   )
-                                )
-                              ]
-                            )
-                          ],
+                                ]
+                              )
+                            ],
+                          ),
                         ),
                       ),
                     ),

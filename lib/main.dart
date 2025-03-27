@@ -12,6 +12,7 @@ import 'package:window_manager/window_manager.dart';
 
 const String ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3aGRlYnFmb293cWl3bnZiemRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzc1NjEwMzIsImV4cCI6MjA1MzEzNzAzMn0.Fj6ZlvPJYZcLmFymYa21frwW2jLGb7HfRov-FhpJxgk";
 const String URL = "https://dwhdebqfoowqiwnvbzdo.supabase.co";
+const String ADMIN_EMAIL = "classschedspusm@gmail.com";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

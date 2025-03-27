@@ -1,5 +1,9 @@
+import 'dart:io';
+
+import 'package:class_sched/main.dart';
 import 'package:class_sched/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LogInPage extends StatefulWidget {
   const LogInPage({super.key});
@@ -19,11 +23,51 @@ class _LogInPageState extends State<LogInPage> {
     final password = passwordController.text;
 
     try {
-      await authService.signInWithEmailAndPassword(email, password);
+      if((email == ADMIN_EMAIL && Platform.isWindows) || email != ADMIN_EMAIL && Platform.isAndroid){
+        await authService.signInWithEmailAndPassword(email, password);
+      } else {
+        ScaffoldMessenger.of(context)
+        .showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Access Denied!'
+            ),
+            backgroundColor: Colors.red,
+          )
+        );
+      }
+      
+    } on AuthException catch (e) {
+      String errorMessage;
+      
+      if (e.message.contains("Invalid login credentials")) {
+        errorMessage = "Incorrect email or password. Please try again.";
+      } else if (e.message.contains("User not confirmed")) {
+        errorMessage = "Your account is not verified. Please check your email.";
+      } else if (e.message.contains("Email not found")) {
+        errorMessage = "No account found with this email.";
+      } else if (e.message.contains("Too many requests")) {
+        errorMessage = "Too many failed attempts. Try again later.";
+      } else {
+        errorMessage = "Login failed. Please try again.";
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Unexpected error occurred. Please try again."),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -124,69 +168,6 @@ class _LogInPageState extends State<LogInPage> {
                         ),
                       ),
                       const SizedBox(height: 5),
-                      // Center(
-                      //   child: TextButton(
-                      //     onPressed: () {
-                      //       showDialog(
-                      //         context: context,
-                      //         builder: (context) {
-                      //           final emailResetController = TextEditingController();
-                      //           return AlertDialog(
-                      //             title: Text(
-                      //               "Reset Password",
-                      //               style: Theme.of(context).textTheme.titleLarge,
-                      //             ),
-                      //             content: TextField(
-                      //               controller: emailResetController,
-                      //               decoration: InputDecoration(
-                      //                 labelText: "SPUSM E-mail",
-                      //                 labelStyle: Theme.of(context).textTheme.labelSmall,
-                      //               ),
-                      //               style: Theme.of(context).textTheme.bodySmall,
-                      //             ),
-                      //             actions: [
-                      //               TextButton(
-                      //                 onPressed: () async {
-                      //                   try {
-                      //                     await authService.resetPassword(emailResetController.text);
-                      //                     if (mounted) {
-                      //                       Navigator.pop(context);
-                      //                       ScaffoldMessenger.of(context).showSnackBar(
-                      //                         const SnackBar(
-                      //                           content: Text("Reset email sent! Please check your inbox."),
-                      //                         ),
-                      //                       );
-                      //                     }
-                      //                   } catch (e) {
-                      //                     if (mounted) {
-                      //                       ScaffoldMessenger.of(context).showSnackBar(
-                      //                         SnackBar(content: Text("Error: $e")),
-                      //                       );
-                      //                     }
-                      //                   }
-                      //                 },
-                      //                 child: Text(
-                      //                   "Reset",
-                      //                   style: Theme.of(context).textTheme.bodySmall,
-                      //                 ),
-                      //               ),
-                      //               TextButton(
-                      //                 onPressed: () {
-                      //                   Navigator.pop(context);
-                      //                 },
-                      //                 child: Text(
-                      //                   "Cancel",
-                      //                   style: Theme.of(context).textTheme.bodySmall,
-                      //                 ),
-                      //               ),
-                      //             ],
-                      //           );
-                      //         },
-                      //       );
-                      //     },
-                      //     child: const Text('Forgot Password'),
-                      //   ),
-                      // )
                     ],
                   ),
                 ),

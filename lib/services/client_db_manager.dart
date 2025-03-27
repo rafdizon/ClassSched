@@ -91,18 +91,36 @@ class ClientDBManager {
   }
 
   Future<void> sendReport({required String body, required String header}) async {
-    final studentInfo = await getCurrentStudentInfo();
-    if (studentInfo == null) {
-      throw Exception("Student record not found");
-    }
-    final studentId = studentInfo['id'];
+    bool isSenderStudent = await isUserStudent();
 
-    await database.from('report').insert({
-      'student_id' : studentId,
-      'is_opened' : false,
-      'header' : header,
-      'body' : body
-    });
+    if(isSenderStudent){
+      final studentInfo = await getCurrentStudentInfo();
+      if (studentInfo == null) {
+        throw Exception("Student record not found");
+      }
+      final studentId = studentInfo['id'];
+
+      await database.from('report').insert({
+        'student_id' : studentId,
+        'is_opened' : false,
+        'header' : header,
+        'body' : body
+      });
+    }
+    else {
+      final instructorInfo = await getCurrentInstructorInfo();
+      if (instructorInfo == null) {
+        throw Exception("Student record not found");
+      }
+      final instructorId = instructorInfo['id'];
+
+      await database.from('report').insert({
+        'instructor_id' : instructorId,
+        'is_opened' : false,
+        'header' : header,
+        'body' : body
+      });
+    }
   }
 }
 

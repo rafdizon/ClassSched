@@ -328,7 +328,7 @@ class AdminDBManager {
     final notifs = await database.from('report')
     .select('id, header, body, is_opened, student(id, first_name, middle_name, last_name, email, student_no, is_regular), instructor(id, first_name, middle_name, last_name, email, is_full_time), created_at')
     .order('created_at');
-
+    
     return notifs;
   }
   // update
