@@ -1,10 +1,13 @@
 import 'package:class_sched/client_side/client_settings_page.dart';
 import 'package:class_sched/client_side/instructor_profile_page.dart';
 import 'package:class_sched/client_side/instructor_schedule_page.dart';
+import 'package:class_sched/client_side/notifications_page.dart';
 import 'package:class_sched/client_side/student_profile_page.dart';
 import 'package:class_sched/client_side/student_schedule_page.dart';
 import 'package:class_sched/services/client_db_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:badges/badges.dart' as badges;
+
 
 class DefaultLayout extends StatefulWidget {
   const DefaultLayout({super.key});
@@ -22,17 +25,23 @@ class _DefaultLayoutState extends State<DefaultLayout> {
   final List<Widget> _pages = const [
     StudentProfilePage(),
     StudentSchedulePage(),
+    NotificationsPage()
   ];
 
   final List<Widget> _instructorPages = const [
     InstructorProfilePage(),
     InstructorSchedulePage(),
+    NotificationsPage()
   ];
   void _onItemTapped(int index) {
     setState(() {
       _selectedTab = index;
+      if(index == 2) {
+        ClientDBManager().markNotifsViewed();
+      }
     });
   }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -171,6 +180,29 @@ class _DefaultLayoutState extends State<DefaultLayout> {
           BottomNavigationBarItem(
             icon: Icon(_selectedTab == 1 ? Icons.calendar_month : Icons.calendar_month_outlined),
             label: 'Schedules'
+          ),
+          BottomNavigationBarItem(
+            icon: FutureBuilder<Object>(
+              future: ClientDBManager().countNotifs(),
+              builder: (context, snapshot) {
+                if(snapshot.connectionState == ConnectionState.waiting) {
+                  return Icon(_selectedTab == 2 ? Icons.notifications_active : Icons.notifications_active_outlined);
+                }
+                final notifCount = snapshot.data as int? ?? 0;
+                return badges.Badge(
+                  badgeContent:  Text(
+                    notifCount.toString(),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Colors.white
+                    ),
+                  ),
+                  child: Icon(_selectedTab == 2 ? Icons.notifications_active : Icons.notifications_active_outlined),
+                  position: badges.BadgePosition.topEnd(end: -5, top: -5),
+                  showBadge: notifCount > 0,
+                );
+              }
+            ),
+            label: 'Notifications'
           ),
         ]
       ),

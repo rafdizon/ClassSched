@@ -233,6 +233,7 @@ class _StudentDetailsDialogState extends State<StudentDetailsDialog> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => EditIrregularSched(
+                                  studentId: widget.studentMap['id'],
                                   schedule: scheduleData,
                                   semNo: selectedSem, 
                                 ),

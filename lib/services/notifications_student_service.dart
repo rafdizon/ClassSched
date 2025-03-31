@@ -9,7 +9,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:class_sched/services/notification_utils.dart';
 import 'package:class_sched/services/client_db_manager.dart';
-
+import 'package:intl/intl.dart';
 
 class NotificationsStudentService {
 
@@ -49,6 +49,11 @@ class NotificationsStudentService {
     );
   }
 
+  String formatTime(String rawDate) {
+  final parsed = DateFormat("yyyy-MM-dd HH:mm:ss.SSS").parse(rawDate);
+  return DateFormat("hh:mm a").format(parsed);
+}
+
   Future<void> showNotif({
     int id = 0,
     String? title,
@@ -61,6 +66,7 @@ class NotificationsStudentService {
       notifDetails(),
     );
   }
+  
 
   Future<void> scheduleNotif({
     int id = 1,
@@ -77,7 +83,7 @@ class NotificationsStudentService {
     await notifPlugin.zonedSchedule(
       id,
       appointment.subject,
-      'Your class starts at ${appointment.startTime}',
+      'Your class starts at ${formatTime(appointment.startTime.toString())}',
       tz.TZDateTime.from(notificationTime, tz.local),
       notifDetails(),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,

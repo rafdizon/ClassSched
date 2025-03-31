@@ -209,6 +209,54 @@ class AdminDBManager {
       return e.toString();
     }
   }
+
+  Future addScheduleToStudent({
+    required int studentId,
+    required String startTime,
+    required String endTime,
+    required int cycleId,
+    required int curriculumId,
+    required int instructorId,
+    required List<String> days
+  }) async {
+    try {
+      final schedResponse = await database.from('schedule_time')
+      .insert({
+        'start_time' : startTime,
+        'end_time' : endTime,
+        'cycle_id' : cycleId,
+        'curriculum_id' : curriculumId,
+        'section_id' : null,
+        'instructor_id' : instructorId,
+        'days' : days
+      }).select().single();
+
+      final schedTimeId = schedResponse['id'];
+
+      final instructorResponse = await database
+        .from('instructor')
+        .select('id')
+        .eq('id', instructorId)
+        .single();
+
+      await database
+      .from('student_schedule_irregular')
+      .insert({
+        'student_id' : studentId,
+        'schedule_time_id' : schedTimeId
+      });
+
+      await database
+      .from('instructor_schedule')
+      .insert({
+        'instructor_id' : instructorResponse['id'],
+        'schedule_time_id' : schedTimeId,
+      });
+
+    } on Exception catch(e) {
+      return e.toString();
+    }
+  }
   // read
   
   Future<Map<int, dynamic>> fetchSectionData() async {
@@ -326,10 +374,21 @@ class AdminDBManager {
 
   Future getNotifications() async {
     final notifs = await database.from('report')
-    .select('id, header, body, is_opened, student(id, first_name, middle_name, last_name, email, student_no, is_regular), instructor(id, first_name, middle_name, last_name, email, is_full_time), created_at')
+    .select('id, header, body, is_opened, status, student(id, first_name, middle_name, last_name, email, student_no, is_regular), instructor(id, first_name, middle_name, last_name, email, is_full_time), created_at')
     .order('created_at');
     
+    Logger().i(notifs);
     return notifs;
+  }
+
+  Future<List<Map<String, dynamic>>> getInstructorSched({required int instructorId}) async {
+    final scheds = await database.from('instructor_schedule')
+    .select('id, instructor(id, first_name, middle_name, last_name, email, sex, is_full_time), schedule_time(id, start_time, end_time, days, curriculum(id, year_level, semester_no, subject(id, name, code, units, is_general_subject), course(id, name, major, short_form)), cycle(id, cycle_no, start_date, end_date, semester(id, number, start_date, end_date, academic_year, academic_year(id, is_active, academic_year))), section(id, year_level, course(id, name, major, short_form)))')
+    .eq('instructor_id', instructorId)
+    .not('schedule_time.section', 'is', null);
+
+    Logger().i(scheds);
+    return scheds;
   }
   // update
   Future editStudent({
@@ -403,7 +462,6 @@ class AdminDBManager {
     required List<String> days,
   }) async {
     try {
-      // Update the schedule_time row based on curriculum and section identifiers.
       final updatedResponse = await database
         .from('schedule_time')
         .update({
@@ -423,6 +481,7 @@ class AdminDBManager {
     }
   }
 
+
   Future updateCycle({required int id, required String cycleNo, required String startDate, required String endDate}) async {
     await database.from('cycle')
     .update({
@@ -433,9 +492,36 @@ class AdminDBManager {
   }
 
   Future markNotifRead({required int id}) async {
-    await database.from('report').update({'is_opened' : true}).eq('id', id);
+    final response = await database
+    .from('report')
+    .update({'status': 'Pending', 'is_opened': true})
+    .eq('is_opened', false)
+    .eq('id', id).select().single();
+
+    if(response.isNotEmpty) {
+      await database.from('notifications')
+      .insert({
+        'student_id' : response['student_id'] != null ? response['student_id'] : null,
+        'instructor_id' : response['instructor_id'] != null ? response['instructor_id'] : null,
+        'report_id' : response['id'],
+        'status' : response['status']
+      });
+    }
   }
 
+  Future markNotifResolved({required int id}) async {
+    
+    final response = await database.from('report').update({'status' : 'Resolved'}).eq('id', id).select().single();
+
+    await database.from('notifications')
+      .insert({
+        'student_id' : response['student_id'] != null ? response['student_id'] : null,
+        'instructor_id' : response['instructor_id'] != null ? response['instructor_id'] : null,
+        'report_id' : response['id'],
+        'status' : response['status']
+      });
+    
+  }
   // delete
   Future deleteUser({required int id, required String email, required bool isStudent}) async {
     try {
@@ -498,7 +584,16 @@ class AdminDBManager {
       return e.toString();
     }
   }
-
+  Future deleteScheduleStudent({required int id}) async {
+    try {
+      final response = await database.from('schedule_time')
+        .delete()
+        .eq('id', id);
+      return null;
+    } on Exception catch (e) {
+      return e.toString();
+    }
+  }
   Future moveAYtoHistory() async {
     try{
       final acadYear = await database.from('academic_year').select().eq('is_active', true).single();

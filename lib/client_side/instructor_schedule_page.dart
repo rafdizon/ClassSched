@@ -102,7 +102,7 @@ class _InstructorSchedulePageState extends State<InstructorSchedulePage> {
             cells: [
               DataCell(
                 Text(
-                  '${sched['schedule_time']['section']['course']['short_form']}-${sched['schedule_time']['section']['year_level']}',
+                  sched['schedule_time']['section'] != null ? '${sched['schedule_time']['section']['course']['short_form']}-${sched['schedule_time']['section']['year_level']}' : ' ',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),

@@ -6,8 +6,6 @@ import 'package:class_sched/ui_elements/student_details_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
-var logger = Logger();
-
 class StudentAccountsPage extends StatefulWidget {
   final String? studentId;
   const StudentAccountsPage({Key? key, this.studentId}) : super(key: key);
@@ -178,11 +176,6 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                     .toLowerCase()
                                     .contains(query) ??
                                 false) ||
-                            (student['middle_name']
-                                    ?.toString()
-                                    .toLowerCase()
-                                    .contains(query) ??
-                                false) ||
                             (student['last_name']
                                     ?.toString()
                                     .toLowerCase()
@@ -194,16 +187,11 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                                     .contains(query) ??
                                 false);
                       }).toList();
-
-                      if (_sortedStudents == null || _searchQuery.isNotEmpty) {
-                        _sortedStudents = List.from(filteredStudents);
-                      }
-
+                      _sortedStudents = List.from(filteredStudents);
                       final studentData =
                           _sortedStudents!.map<DataRow>((student) {
                         return DataRow(
                           onSelectChanged: (selected) {
-                            Logger().i(student);
                             if(selected ?? false) {
                               showDialog(
                                 context: context, 

@@ -2,6 +2,7 @@ import 'package:class_sched/admin_side/base_layout.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:class_sched/ui_elements/add_instructor_dialog.dart';
 import 'package:class_sched/ui_elements/edit_instructor_dialog.dart';
+import 'package:class_sched/ui_elements/instructor_details_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
@@ -147,6 +148,14 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
                       }).toList();
                       final instructorData = filteredInstructor.map<DataRow>((instructor){
                         return DataRow(
+                          onSelectChanged: (selected) {
+                            if (selected ?? false) {
+                              showDialog(
+                                context: context, 
+                                builder: (context) => InstructorDetailsDialog(instructorMap: instructor)
+                              );
+                            }
+                          },
                           cells: [
                             DataCell(
                               IconButton(

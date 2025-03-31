@@ -27,9 +27,10 @@ class ScheduleEntry {
 }
 
 class EditIrregularSched extends StatefulWidget {
+  final int studentId;
   final List<Map<String, dynamic>> schedule;
   final int semNo;
-  const EditIrregularSched({Key? key, required this.schedule, required this.semNo})
+  const EditIrregularSched({Key? key, required this.schedule, required this.semNo, required this.studentId})
       : super(key: key);
 
 
@@ -278,19 +279,17 @@ class _EditIrregularSchedState extends State<EditIrregularSched> {
         );
       }
       else {
-        error = await adminDBManager.addScheduleSection(
+        error = await adminDBManager.addScheduleToStudent(
+          studentId: widget.studentId,
           startTime: startTime,
           endTime: endTime,
           cycleId: cycleId,
           curriculumId: curriculumId,
-          sectionId: widget.schedule.first['schedule_time']['section']['id'],
           instructorId: instructorId,
           days: daysList,
         );
       }
-      setState(() {
-        _isLoading = false;
-      });
+      
 
       if (error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -304,7 +303,7 @@ class _EditIrregularSchedState extends State<EditIrregularSched> {
     }
 
     for (var removedId in _removedSubjectIds) {
-      final error = await adminDBManager.deleteScheduleSection(id: removedId);
+      final error = await adminDBManager.deleteScheduleStudent(id: removedId);
       if (error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -315,6 +314,9 @@ class _EditIrregularSchedState extends State<EditIrregularSched> {
         return;
       }
     }
+    setState(() {
+        _isLoading = false;
+    });
     Navigator.pushReplacement(
       context, 
       MaterialPageRoute(
