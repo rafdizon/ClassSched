@@ -119,37 +119,41 @@ class _InstructorSchedViewState extends State<InstructorSchedView> {
                 ),
               ),
               Expanded(
-                child: DataTable(
-                  columns: [
-                    DataColumn(
-                      label: Text('Course', style: Theme.of(context).textTheme.bodySmall,)
-                    ),
-                    DataColumn(
-                      label: Text('Code', style: Theme.of(context).textTheme.bodySmall,)
-                    ),
-                    DataColumn(
-                      label: Text('Subject', style: Theme.of(context).textTheme.bodySmall,)
-                    ),
-                    DataColumn(
-                      label: Text('Units', style: Theme.of(context).textTheme.bodySmall,)
-                    ),
-                    DataColumn(
-                      label: Text('Cycle', style: Theme.of(context).textTheme.bodySmall,)
-                    ),
-                    DataColumn(
-                      label: Text('Date', style: Theme.of(context).textTheme.bodySmall,)
-                    ),
-                    DataColumn(
-                      label: Text('Days', style: Theme.of(context).textTheme.bodySmall,)
-                    ),
-                    DataColumn(
-                      label: Text('Time', style: Theme.of(context).textTheme.bodySmall,)
-                    ),
-                    DataColumn(
-                      label: Text('Instructor', style: Theme.of(context).textTheme.bodySmall,)
-                    ),
-                  ], 
-                  rows: schedRows
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 70),
+                  child: DataTable(
+                    headingRowColor: WidgetStatePropertyAll(Theme.of(context).colorScheme.secondary),
+                    columns: [
+                      DataColumn(
+                        label: Text('Course', style: Theme.of(context).textTheme.bodySmall,)
+                      ),
+                      DataColumn(
+                        label: Text('Code', style: Theme.of(context).textTheme.bodySmall,)
+                      ),
+                      DataColumn(
+                        label: Text('Subject', style: Theme.of(context).textTheme.bodySmall,)
+                      ),
+                      DataColumn(
+                        label: Text('Units', style: Theme.of(context).textTheme.bodySmall,)
+                      ),
+                      DataColumn(
+                        label: Text('Cycle', style: Theme.of(context).textTheme.bodySmall,)
+                      ),
+                      DataColumn(
+                        label: Text('Date', style: Theme.of(context).textTheme.bodySmall,)
+                      ),
+                      DataColumn(
+                        label: Text('Days', style: Theme.of(context).textTheme.bodySmall,)
+                      ),
+                      DataColumn(
+                        label: Text('Time', style: Theme.of(context).textTheme.bodySmall,)
+                      ),
+                      DataColumn(
+                        label: Text('Instructor', style: Theme.of(context).textTheme.bodySmall,)
+                      ),
+                    ], 
+                    rows: schedRows
+                  ),
                 ),
               ),
             ],

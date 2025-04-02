@@ -42,6 +42,7 @@ class _StudentAccountsPageState extends State<StudentAccountsPage> {
                   'year_level': section?['year_level'] as int? ?? 0,
                   'course': section?['course']?['name'] ?? '',
                   'major': section?['course']?['major'] ?? '',
+                  'short_form': section?['course']?['short_form'] ?? '',
                   'course_id': section?['course']?['id'] ?? 0,
                   'is_regular': student['is_regular'] ? 'Regular' : 'Irregular',
                   'email': student['email'],

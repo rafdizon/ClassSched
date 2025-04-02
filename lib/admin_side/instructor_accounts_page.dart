@@ -255,6 +255,7 @@ class _InstructorAccountsPageState extends State<InstructorAccountsPage> {
                                 child: ConstrainedBox(
                                   constraints: BoxConstraints(minWidth: screenWidth),
                                   child: DataTable(
+                                    showCheckboxColumn: false,
                                     sortAscending: sort,
                                     sortColumnIndex: sortIndex,
                                     columnSpacing: 30,

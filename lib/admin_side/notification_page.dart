@@ -3,6 +3,7 @@ import 'package:class_sched/admin_side/student_accounts_page.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:class_sched/services/client_db_manager.dart';
 import 'package:flutter/material.dart';
+import 'package:logger/logger.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -16,6 +17,13 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
+  String selectedUserType = "All";
+  String selectedStatus = "All";
+  String selectedNotificationType = "All";
+
+  final List<String> userTypeOptions = ["All", "Student", "Instructor"];
+  final List<String> statusOptions = ["All", "Sent", "Pending", "Resolved"];
+  final List<String> notificationTypeOptions = ["All", "Bug", "Schedule", "Account"];
 
   String formatCreatedAt(String createdAt) {
     DateTime utcDateTime = DateTime.parse(createdAt);
@@ -29,6 +37,33 @@ class _NotificationPageState extends State<NotificationPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
+  }
+
+  Future _deletNotif(int id) async {
+    await AdminDBManager().deleteNotification(id: id);
+  }
+
+  bool filterNotification(Map<String, dynamic> notif) {
+    bool matchesUserType = true;
+    if (selectedUserType != "All") {
+      bool isSenderStudent = notif['student'] != null;
+      String notifUserType = isSenderStudent ? "Student" : "Instructor";
+      matchesUserType = notifUserType == selectedUserType;
+    }
+
+    bool matchesStatus = true;
+    if (selectedStatus != "All") {
+      String notifStatus = notif['status'] ?? 'Unread';
+      matchesStatus = notifStatus == selectedStatus;
+    }
+
+    bool matchesNotificationType = true;
+    if (selectedNotificationType != "All") {
+      String header = notif['header'] ?? "";
+      matchesNotificationType = header.contains(selectedNotificationType);
+    }
+
+    return matchesUserType && matchesStatus && matchesNotificationType;
   }
   @override
   Widget build(BuildContext context) {
@@ -52,6 +87,62 @@ class _NotificationPageState extends State<NotificationPage> {
           Divider(
             color: Theme.of(context).colorScheme.primary,
           ),
+          Row(
+            spacing: 20,
+            children: [
+              DropdownButton<String>(
+                value: selectedUserType,
+                items: userTypeOptions
+                    .map((type) => DropdownMenuItem(
+                          value: type,
+                          child: Text(type),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      selectedUserType = value;
+                    });
+                  }
+                },
+                hint: const Text("User Type"),
+              ),
+              DropdownButton<String>(
+                value: selectedStatus,
+                items: statusOptions
+                    .map((status) => DropdownMenuItem(
+                          value: status,
+                          child: Text(status),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      selectedStatus = value;
+                    });
+                  }
+                },
+                hint: const Text("Status"),
+              ),
+              DropdownButton<String>(
+                value: selectedNotificationType,
+                items: notificationTypeOptions
+                    .map((notifType) => DropdownMenuItem(
+                          value: notifType,
+                          child: Text(notifType),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      selectedNotificationType = value;
+                    });
+                  }
+                },
+                hint: const Text("Notification Type"),
+              ),
+            ],
+          ),
           Expanded(
             child: FutureBuilder(
               future: AdminDBManager().getNotifications(), 
@@ -64,13 +155,16 @@ class _NotificationPageState extends State<NotificationPage> {
                 }
             
                 List<Map<String, dynamic>>? notifList = snapshot.data ?? [];
-                if (notifList != null || notifList!.isNotEmpty) {
-                  final notifItems = notifList!.map((notif) {
+                List<Map<String, dynamic>> filteredNotifs = notifList!.where(filterNotification).toList();
+
+                if (filteredNotifs.isNotEmpty) {
+                  final notifItems = filteredNotifs.map((notif) {
                     bool isSenderStudent = notif['student'] != null;
                     return MouseRegion(
                       cursor: SystemMouseCursors.click,
                       child: GestureDetector(
                         onTap: () async {
+                          Logger().i(notif['id']);
                           await AdminDBManager().markNotifRead(id: notif['id'] as int);
                           showDialog(
                             context: context, 
@@ -125,6 +219,16 @@ class _NotificationPageState extends State<NotificationPage> {
                                                 );
                                               },
                                               child: Text('View Sender', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),),
+                                            ),
+                                            TextButton(
+                                              onPressed: () async {
+                                                await _deletNotif(notif['id']);
+                                                setState(() {});
+                                              }, 
+                                              child: Text(
+                                                'Delete',
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.bold, color: Colors.red),
+                                              ),
                                             ),
                                             TextButton(
                                               onPressed: () async {

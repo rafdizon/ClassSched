@@ -1,9 +1,8 @@
-import 'package:class_sched/admin_side/student_sched_views/edit_irregular_sched.dart';
+import 'package:class_sched/admin_side/student_sched_views/assign_irregular_sched.dart';
 import 'package:class_sched/admin_side/student_sched_views/view_regular_sched.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:flutter/material.dart';
 import 'package:collection/collection.dart';
-import 'package:logger/logger.dart';
 
 
 class StudentDetailsDialog extends StatefulWidget {
@@ -227,13 +226,16 @@ class _StudentDetailsDialogState extends State<StudentDetailsDialog> {
                           );
                           
                           if (selectedSem != null) {
-                            Logger().d(selectedSem);
-                            Logger().d(scheduleData);
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => EditIrregularSched(
-                                  studentId: widget.studentMap['id'],
+                                // builder: (context) => EditIrregularSched(
+                                //   studentId: widget.studentMap['id'],
+                                //   schedule: scheduleData,
+                                //   semNo: selectedSem, 
+                                // ),
+                                builder: (context) => AssignIrregularSched(
+                                  studentMap: widget.studentMap,
                                   schedule: scheduleData,
                                   semNo: selectedSem, 
                                 ),
