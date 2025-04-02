@@ -422,6 +422,20 @@ class AdminDBManager {
     Logger().i(scheds);
     return scheds;
   }
+
+  Future<List<Map<String, dynamic>>> getStudentsInClass({required int schedId}) async {
+    final studentsRegular = await database.from('student_schedule')
+    .select('id, schedule_time_id, student(id, first_name, middle_name, last_name, student_no, email, is_regular, sex, section(id, year_level, course(id, name, major, short_form)))')
+    .eq('schedule_time_id', schedId);
+
+    final studentsIrregular = await database.from('student_schedule_irregular')
+    .select('id, schedule_time_id, student(id, first_name, middle_name, last_name, student_no, email, is_regular, sex, section(id, year_level, course(id, name, major, short_form)))')
+    .eq('schedule_time_id', schedId);
+
+    List<Map<String, dynamic>> combinedStudents = studentsRegular + studentsIrregular;
+
+    return combinedStudents;
+  }
   // update
   Future editStudent({
     required int id, 

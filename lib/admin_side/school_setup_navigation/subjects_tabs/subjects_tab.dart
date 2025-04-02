@@ -38,106 +38,6 @@ class _SubjectsTabState extends State<SubjectsTab> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Row(
-          children: [
-            TextButton(
-              onPressed: (){
-                showDialog <Widget>(
-                  context: context, 
-                  barrierDismissible: false,
-                  builder: (context) => const AddSubjectDialog(),
-                );
-              },
-              style: TextButton.styleFrom(
-                fixedSize: const Size(80, 40),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.add, color: Colors.white,),
-                  Text('Add', style: TextStyle(color: Colors.white),)
-                ],
-              )
-            ),
-            const SizedBox(width: 10,),
-            TextButton(
-              onPressed: () async { _selectedRows.isNotEmpty
-                ? showDialog(
-                  context: context, 
-                  builder: (context) {
-                    return Dialog(
-                      child: SizedBox(
-                        height: 130,
-                        width: 150,
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              const Text('Are you sure to delete? This cannot be undone'),
-                              const Spacer(),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    }, 
-                                    child: Text(
-                                      'Cancel',
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.black, fontWeight: FontWeight.bold)
-                                    )
-                                  ),
-                                  TextButton(
-                                    onPressed: () async {
-                                      final error = await adminDBManager.deleteSubject(id: _selectedRows);
-
-                                      if(error == null) {
-                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted Successfully!'), backgroundColor: Theme.of(context).colorScheme.primary,));
-                                        Navigator.of(context).pop();
-                                        setState(() {
-                                          _selectedRows = [];
-                                        });
-                                      }
-                                      else {
-                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error $error'), backgroundColor: Colors.red));
-                                      }
-                                    }, 
-                                    child: Text(
-                                      'Delete',
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Colors.red, 
-                                        fontWeight: FontWeight.bold
-                                      )
-                                    )
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                )
-              : null;
-              },
-              style: TextButton.styleFrom(
-                fixedSize: const Size(90, 40),
-                backgroundColor: _selectedRows.isNotEmpty ? Colors.red : Colors.grey[600],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.delete, color: Colors.white,),
-                  Text('Delete', style: TextStyle(color: Colors.white),)
-                ],
-              )
-            ),
-          ],
-        ),
-        const SizedBox(height: 10,),
         StreamBuilder(
           stream: _streamSubjects, 
           builder: (context, snapshot) {
@@ -174,7 +74,7 @@ class _SubjectsTabState extends State<SubjectsTab> {
                   width: double.infinity,
                   child: DataTable(
                     headingRowColor: WidgetStatePropertyAll(Theme.of(context).colorScheme.secondary),
-                    showCheckboxColumn: true,
+                    showCheckboxColumn: false,
                     columns: const [
                       DataColumn(label: Text('Code')),
                       DataColumn(label: Text('Name')),

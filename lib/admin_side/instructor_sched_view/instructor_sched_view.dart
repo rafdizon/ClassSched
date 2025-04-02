@@ -1,4 +1,5 @@
 import 'package:class_sched/admin_side/base_layout.dart';
+import 'package:class_sched/admin_side/instructor_sched_view/students_in_class.dart';
 import 'package:class_sched/services/admin_db_manager.dart';
 import 'package:flutter/material.dart';
 
@@ -41,6 +42,12 @@ class _InstructorSchedViewState extends State<InstructorSchedView> {
 
           final schedRows = filteredScheds.map((sched) {
             return DataRow(
+              onSelectChanged: (selected) {
+                showDialog(
+                  context: context, 
+                  builder: (context) => StudentsInClass(schedId: sched['schedule_time']['id'])
+                );
+              },
               cells: [
                 DataCell(
                   Text(
@@ -122,6 +129,7 @@ class _InstructorSchedViewState extends State<InstructorSchedView> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 70),
                   child: DataTable(
+                    showCheckboxColumn: false,
                     headingRowColor: WidgetStatePropertyAll(Theme.of(context).colorScheme.secondary),
                     columns: [
                       DataColumn(
